@@ -1,0 +1,901 @@
+.root {
+  --forest: #163300;
+  --bright: #9fe870;
+  --mint: #e2f6d5;
+  --neutral: #edefeb;
+  --secondary: #454745;
+  --sidebar-width: 296px;
+
+  width: 100%;
+  min-height: 100vh;
+  color: #0e0f0c;
+  background: #fff;
+  color-scheme: light;
+  font-size: 16px;
+  font-synthesis: none;
+  line-height: 1.5;
+}
+
+.root,
+.root * {
+  box-sizing: border-box;
+}
+
+.root h1,
+.root h2,
+.root h3,
+.root h4,
+.root p {
+  margin: 0;
+  padding: 0;
+}
+
+.root button {
+  font: inherit;
+}
+
+.root button:focus-visible {
+  outline: 3px solid var(--forest);
+  outline-offset: 5px;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: block;
+  width: 94px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+/* Sidebar */
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  width: var(--sidebar-width);
+  overflow-y: auto;
+  border-right: 1px solid #e1e3df;
+  background: #fff;
+  scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebarLogo {
+  margin: 49px 0 53px 40px;
+}
+
+.navigation {
+  padding: 0 24px 28px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 10px 18px;
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.navItem > span {
+  white-space: pre-line;
+}
+
+.navItem .icon {
+  width: 20px;
+  height: 20px;
+  color: #6c706b;
+}
+
+.selected {
+  border-radius: 999px;
+  background: var(--neutral);
+  color: var(--forest);
+  font-weight: 600;
+}
+
+.selected .icon {
+  color: var(--forest);
+}
+
+.navItem .disclosure {
+  width: 18px;
+  margin-left: auto;
+}
+
+.subItem {
+  gap: 14px;
+  padding-left: 32px;
+}
+
+.subItem .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.recurring {
+  min-height: 72px;
+}
+
+/* Account header */
+
+.accountPage {
+  margin-left: var(--sidebar-width);
+}
+
+.accountHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 16px;
+  height: 112px;
+  padding: 43px 74px 0 30px;
+}
+
+.mobileLogo {
+  display: none;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  color: var(--forest);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.earn {
+  height: 32px;
+  padding: 4px 12px;
+  background: var(--bright);
+  font-size: 14px;
+}
+
+.moreButton {
+  height: 32px;
+  padding: 4px 12px;
+  background: var(--mint);
+  font-size: 14px !important;
+  cursor: pointer;
+}
+
+.moreButton:hover {
+  background: #d5edc5;
+}
+
+.moreButton .icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--neutral);
+  color: #0e0f0c;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.notificationDot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #d32230;
+}
+
+.profileChevron {
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  color: var(--forest);
+}
+
+/* Balance and actions */
+
+.mainContent {
+  width: calc(100% - 80px);
+  max-width: 888px;
+  margin: 12px auto 0;
+}
+
+.balanceLabel {
+  color: var(--secondary);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.balanceLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.balanceLine h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.8px;
+}
+
+.balanceChart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--neutral);
+  color: var(--forest);
+}
+
+.balanceChart .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.6;
+}
+
+.accountActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.accountActions .pill {
+  height: 40px;
+  padding: 8px 12px;
+}
+
+.primary {
+  background: var(--bright);
+}
+
+.secondary {
+  background: var(--mint);
+}
+
+/* Account cards */
+
+.accountsCarousel {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.accountCard {
+  position: relative;
+  flex: 0 0 346px;
+  height: 302px;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #f3f4f2;
+}
+
+.accountCover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 84px;
+}
+
+.accountContent {
+  padding: 98px 16px 16px;
+}
+
+.accountTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accountTitle h2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 30px;
+  letter-spacing: -0.6px;
+}
+
+.accountTitle > .icon {
+  width: 16px;
+  height: 16px;
+  color: #898d87;
+}
+
+.currencyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.currencyFlag {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.currencyRow > .icon {
+  width: 16px;
+  height: 16px;
+  margin-left: 40px;
+  color: #898d87;
+}
+
+.accountDetails {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #e3e6e0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.accountDetails .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.savingsCover {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  border-radius: 20px 20px 0 0;
+  background: #ffc091;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.savingsCover .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.discoverCopy {
+  padding: 108px 24px 24px;
+  text-align: center;
+}
+
+.discoverCopy h2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 30px;
+  letter-spacing: -0.5px;
+}
+
+.discoverCopy p {
+  color: var(--secondary);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.discoverCopy .pill {
+  margin-top: 32px;
+  padding: 8px 16px;
+}
+
+/* Wise card banner */
+
+.cardPromotion {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  min-height: 130px;
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 24px;
+  background: #e0f7f7;
+}
+
+.promotionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #a3babb;
+  border-radius: 50%;
+}
+
+.promotionContent {
+  padding: 2px 30px 0 0;
+}
+
+.promotionContent h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.promotionContent p {
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.orderCard {
+  height: 40px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #005052;
+  color: #e0f7f7;
+}
+
+.promotionClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #badcdd;
+}
+
+.promotionClose .icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+/* Transactions */
+
+.transactions {
+  margin-top: 40px;
+}
+
+.transactionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.transactionsHeader h2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 30px;
+  letter-spacing: -0.6px;
+}
+
+.seeAll {
+  color: var(--forest);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.transactionsPlaceholder {
+  min-height: 220px;
+  padding-top: 42px;
+}
+
+.placeholderIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #e8ebe6;
+  border-radius: 50%;
+  background: #f7f8f6;
+  color: #9b9e97;
+}
+
+.conceptNote {
+  padding: 24px 0 !important;
+  color: #74786e;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+/* Full-screen Do more menu */
+
+.dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 0;
+  background: #fff;
+  color: #0e0f0c;
+  font-family: inherit;
+  color-scheme: light;
+}
+
+.dialog::backdrop {
+  background: #fff;
+}
+
+.moreHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 112px;
+  padding: 0 56px 0 36px;
+  border-bottom: 1px solid #e1e3df;
+}
+
+.moreHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--forest);
+  cursor: pointer;
+}
+
+.closeButton .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.moreContent {
+  width: min(640px, calc(100% - 48px));
+  margin: 40px auto 48px;
+}
+
+.moreContent > h2 {
+  margin-bottom: 36px;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: -0.7px;
+  text-align: center;
+}
+
+.menuGroup {
+  margin-top: 24px;
+}
+
+.menuGroup > h3 {
+  margin-bottom: 16px;
+  color: var(--secondary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.menuOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 12px 0;
+}
+
+.optionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.forest {
+  background: var(--forest);
+  color: var(--bright);
+}
+
+.gold {
+  background: #3a341c;
+  color: #ffeb69;
+}
+
+.purple {
+  background: #260a2f;
+  color: #ffc091;
+}
+
+.optionCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.optionCopy h4 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.optionCopy p {
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.optionChevron {
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  color: #898d87;
+}
+
+.newBadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--bright);
+  color: var(--forest);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  vertical-align: middle;
+}
+
+/* Smaller screens */
+
+@media (max-width: 1199px) {
+  .root {
+    --sidebar-width: 248px;
+  }
+
+  .navigation {
+    padding-inline: 16px;
+  }
+
+  .sidebarLogo {
+    margin-left: 34px;
+  }
+
+  .navItem {
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .subItem {
+    padding-left: 28px;
+  }
+
+  .mainContent {
+    width: calc(100% - 64px);
+  }
+
+  .accountHeader {
+    padding-right: 32px;
+  }
+}
+
+@media (max-width: 800px) {
+  .root {
+    --sidebar-width: 208px;
+  }
+
+  .navigation {
+    padding-inline: 12px;
+  }
+
+  .navItem {
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+
+  .navItem .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .subItem {
+    gap: 10px;
+    padding-left: 20px;
+  }
+
+  .subItem .icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .sidebarLogo {
+    margin-left: 24px;
+  }
+
+  .accountHeader {
+    gap: 12px;
+    padding-right: 24px;
+  }
+
+  .profileName,
+  .profileChevron,
+  .earn {
+    display: none;
+  }
+
+  .mainContent {
+    width: calc(100% - 48px);
+  }
+
+  .accountActions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .accountActions .pill {
+    font-size: 14px;
+  }
+
+  .cardPromotion {
+    gap: 12px;
+  }
+
+  .promotionIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .promotionContent p {
+    line-height: 21px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    display: none;
+  }
+
+  .accountPage {
+    margin-left: 0;
+  }
+
+  .accountHeader {
+    height: 96px;
+    padding: 26px 20px 0;
+  }
+
+  .mobileLogo {
+    display: block;
+    margin-top: 5px;
+    margin-right: auto;
+  }
+
+  .mobileLogo .logo {
+    width: 84px;
+  }
+
+  .mainContent {
+    width: calc(100% - 40px);
+    margin-top: 12px;
+  }
+
+  .accountCard {
+    flex-basis: min(310px, 88vw);
+    height: 288px;
+  }
+
+  .accountsCarousel {
+    gap: 16px;
+  }
+
+  .promotionIcon {
+    display: none;
+  }
+
+  .promotionContent {
+    padding-right: 16px;
+  }
+
+  .promotionContent p {
+    margin-top: 2px;
+    font-size: 13px;
+  }
+
+  .transactionsHeader h2 {
+    font-size: 21px;
+  }
+
+  .moreHeader {
+    height: 88px;
+    padding: 0 20px;
+  }
+
+  .moreHeaderActions {
+    gap: 16px;
+  }
+
+  .moreHeader .avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .moreContent {
+    width: calc(100% - 40px);
+    margin-top: 32px;
+  }
+
+  .moreContent > h2 {
+    margin-bottom: 28px;
+    font-size: 25px;
+  }
+
+  .optionCopy h4 {
+    font-size: 15px;
+  }
+
+  .optionCopy p {
+    font-size: 13px;
+    line-height: 21px;
+  }
+
+  .optionIcon {
+    width: 44px;
+    height: 44px;
+  }
+}
