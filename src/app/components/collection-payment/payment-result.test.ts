@@ -53,8 +53,10 @@ describe('payer preview presentation', () => {
     expect(render()).toContain('TRANSFER PENDING.');
     expect(render()).toContain('Simulate bank confirmation');
     expect(render()).not.toContain('BOOM. CHIPPED IN.');
+    expect(render()).not.toContain('data-celebration-confetti');
     pending.status = 'paid';
     expect(render()).toContain('BOOM. CHIPPED IN.');
+    expect(render()).toContain('data-celebration-confetti="true"');
     expect(render()).toContain('NO MONEY MOVED');
     expect(render()).toContain('chip-in-success.png');
     const current = (await client.get(collection.id))!;

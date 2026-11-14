@@ -318,19 +318,6 @@
 .ruleHeader .textButton {
   font-size: 12px;
 }
-.check {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: transparent;
-  border: 2px solid #8b9680 !important;
-}
-.check[aria-checked='true'] {
-  background: #163300;
-  border-color: #163300 !important;
-  color: #9fe870;
-}
 .message {
   background: white;
   padding: 12px 14px;
@@ -361,18 +348,6 @@
 .editorLabel .help {
   margin: 0;
   font-weight: 400;
-}
-.contactWarning {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 14px;
-  margin-top: 16px;
-}
-.contactList {
-  display: grid;
-  gap: 6px;
 }
 .manageRows {
   border-radius: 24px;
@@ -580,15 +555,6 @@
 }
 .dialog .switch[aria-checked='true'] {
   background: #163300;
-}
-.dialog .check {
-  padding: 0;
-  min-height: 30px;
-  background: transparent;
-}
-.dialog .check[aria-checked='true'] {
-  background: #163300;
-  color: #9fe870;
 }
 .dialog .manageRow > button {
   background: transparent;

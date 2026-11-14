@@ -57,9 +57,7 @@ export function DashboardAnswersPanel({
           Download list
         </button>
       </footer>
-      <p className={styles.help}>
-        These answers are fictional examples for the frontend demo.
-      </p>
+      <p className={styles.help}>Answers provided with locally saved demo payments.</p>
     </DashboardDialog>
   );
 }

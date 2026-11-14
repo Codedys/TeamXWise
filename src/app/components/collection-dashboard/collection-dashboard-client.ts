@@ -1,4 +1,9 @@
-import type { CollectionPreview } from '../collection-preview/collection-preview-client';
+import {
+  participantPreviewSchema,
+  paymentReceiptPreviewSchema,
+  type CollectionPreview,
+  type PaymentReceiptPreview,
+} from '../collection-preview/collection-preview-client';
 import {
   dashboardPreferencesSchema,
   defaultDashboardPreferences,
@@ -6,12 +11,23 @@ import {
 } from './dashboard-settings';
 import { z } from 'zod';
 
+export const disbursementSchema = z.object({
+  requestId: z.string().min(1),
+  kind: z.enum(['bill', 'withdrawal']),
+  amountMinorUnits: z.number().int().positive().safe(),
+  recipient: z.string().trim().min(1).max(120),
+  reference: z.string().trim().max(200),
+});
+export type DisbursementRequest = z.infer<typeof disbursementSchema>;
+export type Disbursement = DisbursementRequest & { createdAt: number };
+
 export const collectionDashboardSchema = z.object({
   id: z.string(),
   title: z.string(),
   isOpen: z.boolean().default(true),
-  samplePaidCount: z.number().int().nonnegative().nullable().default(null),
-  statisticsPriceMinorUnits: z.number().int().positive().nullable().default(null),
+  participants: participantPreviewSchema.array().default([]),
+  payments: paymentReceiptPreviewSchema.array().default([]),
+  disbursements: disbursementSchema.extend({ createdAt: z.number() }).array().default([]),
   preferences: dashboardPreferencesSchema.default(defaultDashboardPreferences),
   invitationMessage: z.string().max(2000).nullable().default(null),
   audience: z.enum(['group', 'anyone']),
@@ -30,13 +46,14 @@ export const collectionDashboardSchema = z.object({
   status: z.enum(['active', 'complete', 'expired']),
 });
 export type CollectionDashboard = z.infer<typeof collectionDashboardSchema>;
-/** Frontend summary contract. Contains no payer names, receipts, emails or answers. */
+/** Local owner view contract. Replace this browser implementation when the backend is ready. */
 export interface CollectionDashboardClient {
   remember(collection: CollectionPreview, expiresAt: number): void;
   savePreferences(id: string, preferences: DashboardPreferences): void;
   remove(id: string): void;
   activate(id: string): void;
-  update(collection: CollectionPreview): void;
+  update(collection: CollectionPreview, payments?: PaymentReceiptPreview[]): void;
+  disburse(id: string, request: DisbursementRequest): Disbursement;
   close(id: string, status: 'complete' | 'expired'): void;
   list(): CollectionDashboard[];
   get(id: string): CollectionDashboard | null;

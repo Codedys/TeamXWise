@@ -42,6 +42,9 @@ export const paymentReceiptPreviewSchema = z.object({
   rate: z.number().positive(),
   method: z.enum(['instant', 'bank']),
   status: z.enum(['pending', 'paid']),
+  answer: z.string().max(1000).nullable().default(null),
+  createdAt: z.number().nonnegative().nullable().default(null),
+  paidAt: z.number().nonnegative().nullable().default(null),
 });
 export type CollectionPreview = z.infer<typeof collectionPreviewSchema>;
 export type ParticipantPreview = z.infer<typeof participantPreviewSchema>;

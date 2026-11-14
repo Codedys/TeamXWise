@@ -94,9 +94,9 @@ describe('browser-only collection payment preview', () => {
       'paused',
     );
     expect((await client.receipt(collection.id, receipt.id))?.sourceMinorUnits).toBe(1500);
+    expect(dashboards.get(collection.id)?.payments[0].sourceMinorUnits).toBe(1500);
     expect(dashboards.get(collection.id)).toMatchObject({
       priceMinorUnits: 2000,
-      statisticsPriceMinorUnits: 1500,
       collectedMinorUnits: 1500,
     });
     await client.configure(collection.id, { ...settings, isOpen: true });
@@ -218,7 +218,7 @@ describe('browser-only collection payment preview', () => {
     expect(await client.get(collection.id)).toBeNull();
   });
 
-  it('deletes the token, roster and receipts when the last group payment succeeds, retaining only an owner summary', async () => {
+  it('deletes the token, roster and receipts when the last group payment succeeds, retaining the owner roster and payment history', async () => {
     const { client, storage, dashboards } = fixture();
     const collection = await client.publish(group());
     dashboards.activate(collection.id);
@@ -237,7 +237,16 @@ describe('browser-only collection payment preview', () => {
       paidCount: 2,
       collectedMinorUnits: 71868,
     });
-    expect(JSON.stringify(dashboards.get(collection.id))).not.toContain('Emma Ilves');
+    expect(dashboards.get(collection.id)?.participants.map((person) => person.name)).toEqual([
+      'Emma Ilves',
+      'Karl Rebane',
+    ]);
+    expect(dashboards.get(collection.id)?.payments).toHaveLength(2);
+    expect(
+      dashboardModel(fixture(storage).dashboards.get(collection.id)!).people.every(
+        (person) => person.paid,
+      ),
+    ).toBe(true);
     await expect(client.receipt(collection.id, receipt.id)).rejects.toThrow('complete');
     expect(await fixture(storage).client.get(collection.id)).toBeNull();
   });
@@ -396,5 +405,65 @@ describe('browser-only collection payment preview', () => {
         'missing',
       ),
     ).toBeNull();
+  });
+  it('keeps real answers, names and settled timestamps in the owner view after token expiry', async () => {
+    const { client, dashboards, advance, storage } = fixture();
+    const collection = await client.publish(
+      group({
+        audience: 'anyone',
+        amount: '15',
+        customQuestionEnabled: true,
+        customQuestion: 'Any allergies?',
+      }),
+    );
+    dashboards.activate(collection.id);
+    const pending = await client.submit(
+      request(collection, { quantity: 2, method: 'bank', answer: 'Nuts' }),
+    );
+    expect(dashboardModel(dashboards.get(collection.id)!)).toMatchObject({
+      paid: 0,
+      total: 0,
+    });
+    advance(50);
+    await client.confirmBankTransfer(collection.id, pending.id);
+    advance(PREVIEW_LIFETIME_MS);
+    expect(await client.get(collection.id)).toBeNull();
+    const owner = fixture(storage).dashboards.get(collection.id)!;
+    expect(owner.status).toBe('expired');
+    expect(owner.payments[0]).toMatchObject({
+      payerName: 'Emma Ilves',
+      quantity: 2,
+      answer: 'Nuts',
+      createdAt: 1000,
+      paidAt: 1050,
+    });
+    expect(dashboardModel(owner).people[0]).toMatchObject({
+      name: 'Emma Ilves',
+      quantity: 2,
+      answer: 'Nuts',
+      amountMinorUnits: 3000,
+    });
+  });
+  it('hydrates an older owner summary from the surviving local payment record without adding sample people', async () => {
+    const { client, dashboards, storage } = fixture();
+    const collection = await client.publish(group());
+    dashboards.activate(collection.id);
+    await client.submit(request(collection));
+    const key = 'chip-in:collection-dashboards:v1';
+    const entries = JSON.parse(storage.get(key)!);
+    delete entries[0].participants;
+    delete entries[0].payments;
+    entries[0].samplePaidCount = 9;
+    entries[0].preferences.contacts = { emma: '+372 5550000' };
+    storage.set(key, JSON.stringify(entries));
+    await client.get(collection.id);
+    const saved = fixture(storage).dashboards.get(collection.id)!;
+    expect(saved.participants.map((person) => person.name)).toEqual([
+      'Emma Ilves',
+      'Karl Rebane',
+    ]);
+    expect(dashboardModel(saved)).toMatchObject({ paid: 1, total: 35934 });
+    expect(saved).not.toHaveProperty('samplePaidCount');
+    expect(storage.get(key)).not.toContain('contacts');
   });
 });

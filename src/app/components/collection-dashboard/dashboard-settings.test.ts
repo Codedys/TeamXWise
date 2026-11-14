@@ -1,21 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   defaultDashboardPreferences,
-  nextReminderDate,
   reminderPreview,
+  copyableReminder,
+  dashboardPreferencesSchema,
 } from './dashboard-settings';
 import { dashboardCsv } from './dashboard-export';
-describe('dashboard reminder schedules and export', () => {
-  it('selects the next enabled calendar-day reminder and respects pausing', () => {
-    const settings = defaultDashboardPreferences();
-    expect(nextReminderDate(settings, '2026-11-28', '2026-11-14')).toBe('2026-11-21');
-    expect(nextReminderDate(settings, '2026-11-28', '2026-11-22')).toBe('2026-11-27');
-    settings.rules[1].enabled = false;
-    expect(nextReminderDate(settings, '2026-11-28', '2026-11-22')).toBeNull();
-    settings.remindersEnabled = false;
-    expect(nextReminderDate(settings, '2026-11-28', '2026-11-14')).toBeNull();
-    expect(nextReminderDate(defaultDashboardPreferences(), null, '2026-11-14')).toBeNull();
-  });
+describe('copyable reminder messages and export', () => {
   it('renders editable reminder tokens without changing the saved template', () => {
     const template = 'Hi [name]! [amount] for [occasion] by [date]. [link]';
     expect(
@@ -28,6 +19,36 @@ describe('dashboard reminder schedules and export', () => {
       }),
     ).toBe('Hi Hugo! €60 for Rome by 28 Nov. https://example.com/pay');
     expect(template).toContain('[name]');
+  });
+  it('copies a complete reminder with a real link, even when the edited template omits it', () => {
+    const fields = {
+      name: 'Karl Rebane',
+      amount: '€60',
+      occasion: 'Rome',
+      deadline: null,
+      url: 'http://localhost:3000/chip-in/pay/demo',
+    };
+    expect(copyableReminder('Hi [name], [amount] for [occasion].', fields)).toBe(
+      `Hi Karl, €60 for Rome.\n${fields.url}`,
+    );
+    expect(copyableReminder('[link]', fields)).toBe(fields.url);
+    expect(copyableReminder('Hi [name]. [link]', { ...fields, name: 'everyone' })).toBe(
+      `Hi everyone. ${fields.url}`,
+    );
+    expect(
+      dashboardPreferencesSchema.parse({
+        ...defaultDashboardPreferences(),
+        contacts: { karl: '+372 5550000' },
+        remindersEnabled: true,
+      }),
+    ).not.toHaveProperty('contacts');
+    const legacy = dashboardPreferencesSchema.parse({
+      ...defaultDashboardPreferences(),
+      remindersEnabled: true,
+      rules: defaultDashboardPreferences().rules.map((rule) => ({ ...rule, enabled: true })),
+    });
+    expect(legacy).not.toHaveProperty('remindersEnabled');
+    expect(legacy.rules[0]).not.toHaveProperty('enabled');
   });
   it('escapes CSV text, including commas, newlines, quotes and spreadsheet formulas', () => {
     expect(

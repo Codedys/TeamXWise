@@ -25,7 +25,7 @@ export function CollectionCards() {
     <section className={styles.homeCollections} aria-labelledby="chip-in-collections-heading">
       <div className={styles.homeHeader}>
         <h2 id="chip-in-collections-heading">Your Chip ins</h2>
-        <span>Mock dashboards</span>
+        <span>Saved in this browser</span>
       </div>
       <div className={styles.homeGrid}>
         {collections.map((collection) => {
@@ -47,7 +47,7 @@ export function CollectionCards() {
                 {model.group ? 'paid' : 'people joined'}
               </span>
               <span className={styles.homeTrack}>
-                <span style={{ width: `${model.percentage ?? 100}%` }} />
+                <span style={{ width: `${model.percentage ?? 0}%` }} />
               </span>
               <small>
                 {collection.status === 'complete'
@@ -57,7 +57,7 @@ export function CollectionCards() {
                     : !collection.isOpen
                       ? 'Link paused'
                       : 'View dashboard'}{' '}
-                · sample statistics
+                · local demo data
               </small>
             </Link>
           );

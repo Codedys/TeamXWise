@@ -32,8 +32,8 @@ export function DashboardPeoplePanel({
         ...rows.map((person) => [
           person.name,
           person.quantity,
-          person.paid ? person.paidOn : '',
-          person.paid ? 'Paid' : 'Unpaid',
+          person.paidOn,
+          person.status,
           ((person.paid ? person.amountMinorUnits : collection.priceMinorUnits) / 100).toFixed(
             2,
           ),
@@ -85,7 +85,7 @@ export function DashboardPeoplePanel({
               <tr key={person.id}>
                 <th scope="row">{person.name}</th>
                 <td>{person.quantity}</td>
-                <td>{person.paid ? shortDeadline(person.paidOn) : 'Unpaid'}</td>
+                <td>{person.paidOn ? shortDeadline(person.paidOn) : person.status}</td>
                 <td>
                   {displayMoney(
                     person.paid ? person.amountMinorUnits : collection.priceMinorUnits,
@@ -99,8 +99,8 @@ export function DashboardPeoplePanel({
         {!rows.length && <p className={styles.empty}>No names match your search.</p>}
       </div>
       <p className={styles.help}>
-        Showing {rows.length} of {model.people.length} · scroll for more. Sample data, newest
-        first.
+        Showing {rows.length} of {model.people.length} · scroll for more. Saved locally in this
+        browser.
       </p>
       <footer className={styles.footer}>
         <button type="button" className={styles.primary} onClick={exportRows}>

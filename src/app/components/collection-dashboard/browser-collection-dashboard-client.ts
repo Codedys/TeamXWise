@@ -1,15 +1,16 @@
 import {
   collectionDashboardSchema,
+  disbursementSchema,
   type CollectionDashboard,
   type CollectionDashboardClient,
 } from './collection-dashboard-client';
 
-import { dashboardModel } from './collection-dashboard-model';
 import { dashboardPreferencesSchema, defaultDashboardPreferences } from './dashboard-settings';
 
 const STORAGE_KEY = 'chip-in:collection-dashboards:v1';
 export function createBrowserCollectionDashboardClient(options: {
   storage: () => Pick<Storage, 'getItem' | 'setItem'>;
+  now?: () => number;
 }): CollectionDashboardClient {
   let memory: CollectionDashboard[] = [];
   const listeners = new Set<() => void>();
@@ -17,10 +18,15 @@ export function createBrowserCollectionDashboardClient(options: {
   function read() {
     if (storageBlocked) return memory;
     try {
-      const parsed = collectionDashboardSchema
-        .array()
-        .safeParse(JSON.parse(options.storage().getItem(STORAGE_KEY) ?? '[]'));
-      if (parsed.success) memory = parsed.data;
+      const raw = JSON.parse(options.storage().getItem(STORAGE_KEY) ?? '[]');
+      const parsed = collectionDashboardSchema.array().safeParse(raw);
+      if (parsed.success) {
+        memory = parsed.data;
+        // Persist schema upgrades and discard obsolete sample counts and phone fields.
+        if (JSON.stringify(raw) !== JSON.stringify(memory)) {
+          options.storage().setItem(STORAGE_KEY, JSON.stringify(memory));
+        }
+      }
     } catch {
       /* Storage may be blocked in private browsing. */
     }
@@ -30,7 +36,7 @@ export function createBrowserCollectionDashboardClient(options: {
     try {
       options.storage().setItem(STORAGE_KEY, JSON.stringify(memory));
     } catch {
-      storageBlocked = true; /* The summary remains available during this visit. */
+      storageBlocked = true; /* The owner record remains available during this visit. */
     }
     listeners.forEach((listener) => listener());
   }
@@ -42,8 +48,9 @@ export function createBrowserCollectionDashboardClient(options: {
         id: collection.id,
         title: collection.title,
         isOpen: collection.isOpen,
-        samplePaidCount: null,
-        statisticsPriceMinorUnits: collection.priceMinorUnits,
+        participants: structuredClone(collection.participants),
+        payments: [],
+        disbursements: [],
         preferences: defaultDashboardPreferences(),
         invitationMessage: collection.invitationMessage,
         audience: collection.audience,
@@ -101,11 +108,14 @@ export function createBrowserCollectionDashboardClient(options: {
       item.visible = true;
       write();
     },
-    update(collection) {
+    update(collection, payments) {
       const item = read().find((item) => item.id === collection.id);
       if (!item) return;
-      item.samplePaidCount ??= Math.max(0, dashboardModel(item).paid - item.paidCount);
-      item.statisticsPriceMinorUnits ??= item.priceMinorUnits;
+      const before = JSON.stringify(item);
+      item.title = collection.title;
+      item.participants = structuredClone(collection.participants);
+      item.expectedCount = collection.participants.length;
+      if (payments) item.payments = structuredClone(payments);
       item.isOpen = collection.isOpen;
       item.priceMinorUnits = collection.priceMinorUnits;
       item.deadline = collection.deadline;
@@ -116,7 +126,47 @@ export function createBrowserCollectionDashboardClient(options: {
       item.invitationMessage = collection.invitationMessage;
       item.paidCount = collection.progress.paidSpots;
       item.collectedMinorUnits = collection.progress.receivedMinorUnits;
-      write();
+      if (JSON.stringify(item) !== before) write();
+    },
+    disburse(id, request) {
+      const validated = disbursementSchema.parse(request);
+      const items = read();
+      const item = items.find((item) => item.id === id && item.visible);
+      if (!item) throw new Error('Collection not found.');
+      const existing = item.disbursements.find(
+        (payment) => payment.requestId === validated.requestId,
+      );
+      if (existing) {
+        if (
+          Object.entries(validated).some(
+            ([key, value]) => existing[key as keyof typeof validated] !== value,
+          )
+        )
+          throw new Error('This payment reference has already been used.');
+        return structuredClone(existing);
+      }
+      const available =
+        item.collectedMinorUnits -
+        item.disbursements.reduce((sum, payment) => sum + payment.amountMinorUnits, 0);
+      if (validated.amountMinorUnits > available)
+        throw new Error('The amount is higher than your available balance.');
+      const payment = { ...validated, createdAt: (options.now ?? Date.now)() };
+      const next = items.map((entry) =>
+        entry.id === id
+          ? { ...entry, disbursements: [...entry.disbursements, payment] }
+          : entry,
+      );
+      try {
+        options.storage().setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        throw new Error(
+          'Could not save the demo payment. Browser storage is unavailable or full.',
+        );
+      }
+      memory = next;
+      storageBlocked = false;
+      listeners.forEach((listener) => listener());
+      return structuredClone(payment);
     },
     close(id, status) {
       const item = read().find((item) => item.id === id);

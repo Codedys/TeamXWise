@@ -1,114 +1,101 @@
 import type { CollectionDashboard } from './collection-dashboard-client';
+import { localDateInput } from '../create-collection/create-collection-draft';
+import { shortDeadline, dateFromInput } from '../create-collection/calendar-date';
 
-const SAMPLE_NAMES = [
-  'Mari Lill',
-  'Tõnu Kask',
-  'Liis Mägi',
-  'Rauno Saar',
-  'Kerli Põld',
-  'Siim Laas',
-  'Anett Kuus',
-  'Marko Teder',
-  'Hugo Mets',
-  'Rasmus Lepik',
-  'Laura Kuusk',
-  'Anna Sepp',
-  'Marten Oja',
-  'Sander Rand',
-  'Oliver Tamm',
-  'Emma Ilves',
-  'Karl Rebane',
-  'Liisa Pärn',
-  'Joonas Luik',
-  'Mia Kask',
-  'Sofia Saar',
-];
-export function dashboardModel(collection: CollectionDashboard) {
+/** Derive both dashboard layouts from the saved roster and confirmed demo receipts. */
+export function dashboardModel(collection: CollectionDashboard, today?: string) {
   const group = collection.audience === 'group';
-  const initialGoalCount = Math.ceil(collection.goalMinorUnits / collection.priceMinorUnits);
-  const samplePaid =
-    collection.samplePaidCount ??
-    (group
-      ? Math.floor(collection.expectedCount * 0.6)
-      : Math.min(
-          34,
-          collection.limitType === 'spots'
-            ? Math.floor(collection.spotLimit * 0.425)
-            : collection.limitType === 'goal'
-              ? Math.floor(initialGoalCount * 0.425)
-              : 34,
-        ));
-  let target = group
+  const paid = collection.paidCount;
+  const total = collection.collectedMinorUnits;
+  const target = group
     ? collection.expectedCount
     : collection.limitType === 'spots'
       ? collection.spotLimit
-      : null;
-  const paid =
-    collection.status === 'complete'
-      ? collection.paidCount
-      : Math.min(target ?? Number.MAX_SAFE_INTEGER, samplePaid + collection.paidCount);
-  const virtualPaid = Math.max(0, paid - collection.paidCount);
-  const total =
-    virtualPaid * (collection.statisticsPriceMinorUnits ?? collection.priceMinorUnits) +
-    collection.collectedMinorUnits;
-  if (!group && collection.limitType === 'goal')
-    target =
-      paid +
-      Math.ceil(Math.max(0, collection.goalMinorUnits - total) / collection.priceMinorUnits);
+      : collection.limitType === 'goal'
+        ? paid +
+          Math.ceil(
+            Math.max(0, collection.goalMinorUnits - total) / collection.priceMinorUnits,
+          )
+        : null;
   const missing = target === null ? 0 : Math.max(0, target - paid);
-  const outstanding = missing * collection.priceMinorUnits;
-  // These names and activity values are fixtures, never saved payer information.
-  const people = Array.from(
-    { length: group ? collection.expectedCount : Math.min(paid, 21) },
-    (_, index) => ({
-      id: `sample-${index}`,
-      paidOn: `2026-11-${String(14 - Math.min(5, Math.floor(index / 4))).padStart(2, '0')}`,
-      answer:
-        index < 9
-          ? [
-              'Nuts',
-              'One of us is vegetarian',
-              'Gluten',
-              'No pork please',
-              'Lactose',
-              'Vegan',
-              'Shellfish',
-              'Coeliac, strictly no gluten',
-              'Peanuts',
-            ][index]
-          : null,
-      name:
-        SAMPLE_NAMES[index % SAMPLE_NAMES.length] +
-        (index >= SAMPLE_NAMES.length
-          ? ` ${Math.floor(index / SAMPLE_NAMES.length) + 1}`
-          : ''),
-      quantity: group
-        ? 1
-        : Math.floor(paid / Math.min(paid, 21)) + (index < paid % Math.min(paid, 21) ? 1 : 0),
-      paid: !group || index >= missing,
-      status:
-        index % 3 === 0
-          ? 'Opened the link, hasn’t paid'
-          : index % 3 === 1
-            ? 'Reminded 2 days ago'
-            : 'Hasn’t opened the link',
-      when: index === 0 ? 'just now' : `${index * 4} min ago`,
-    }),
-  );
-  let allocated = 0;
-  const paymentPeople = people.filter((person) => person.paid);
-  const peopleWithAmounts = people.map((person) => {
-    const last = person.id === paymentPeople.at(-1)?.id;
-    const amountMinorUnits = !person.paid
-      ? 0
-      : last
-        ? total - allocated
-        : Math.floor((total * person.quantity) / Math.max(1, paid));
-    allocated += amountMinorUnits;
-    return { ...person, amountMinorUnits };
+  const outstanding =
+    group || collection.limitType !== 'goal'
+      ? missing * collection.priceMinorUnits
+      : Math.max(0, collection.goalMinorUnits - total);
+  const people = group
+    ? collection.participants.map((person) => {
+        const receipt = collection.payments.find(
+          (payment) => payment.participantId === person.id && payment.status === 'paid',
+        );
+        const paidOn = receipt?.paidAt == null ? '' : localDateInput(new Date(receipt.paidAt));
+        return {
+          id: person.id,
+          name: person.name,
+          quantity: 1,
+          paid: person.status === 'paid',
+          paidOn,
+          answer: receipt?.answer ?? null,
+          status:
+            person.status === 'paid'
+              ? 'Paid · thank you!'
+              : person.status === 'pending'
+                ? 'Bank transfer pending'
+                : 'Hasn’t paid yet',
+          when: paidOn ? shortDeadline(paidOn) : '',
+          amountMinorUnits: receipt?.sourceMinorUnits ?? 0,
+        };
+      })
+    : [...collection.payments]
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+        .map((receipt) => {
+          const paidOn =
+            receipt.paidAt == null ? '' : localDateInput(new Date(receipt.paidAt));
+          return {
+            id: receipt.id,
+            name: receipt.payerName,
+            quantity: receipt.quantity,
+            paid: receipt.status === 'paid',
+            paidOn,
+            answer: receipt.answer,
+            status: receipt.status === 'paid' ? 'Paid · thank you!' : 'Bank transfer pending',
+            when:
+              receipt.status === 'pending'
+                ? 'Bank transfer pending'
+                : paidOn
+                  ? shortDeadline(paidOn)
+                  : 'Paid · date unavailable',
+            amountMinorUnits: receipt.status === 'paid' ? receipt.sourceMinorUnits : 0,
+          };
+        });
+  // A deterministic fallback keeps this model safe during server rendering.
+  const endDate = dateFromInput(
+    today ??
+      people
+        .map((person) => person.paidOn)
+        .filter(Boolean)
+        .sort()
+        .at(-1) ??
+      '1970-01-01',
+  )!;
+  const dayDates = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(endDate);
+    date.setDate(date.getDate() - (5 - index));
+    return localDateInput(date);
   });
-  const days = [6, 1, 9, 2, 4].map((weight) => Math.floor((samplePaid * weight) / 34));
-  days.push(paid - days.reduce((sum, value) => sum + value, 0));
+  const days = dayDates.map((date) =>
+    collection.payments
+      .filter(
+        (payment) =>
+          payment.status === 'paid' &&
+          payment.paidAt !== null &&
+          localDateInput(new Date(payment.paidAt)) === date,
+      )
+      .reduce((sum, payment) => sum + payment.quantity, 0),
+  );
+  const spent = collection.disbursements.reduce(
+    (sum, payment) => sum + payment.amountMinorUnits,
+    0,
+  );
   const percentage =
     collection.limitType === 'goal' && !group
       ? Math.min(100, (total / collection.goalMinorUnits) * 100)
@@ -122,15 +109,19 @@ export function dashboardModel(collection: CollectionDashboard) {
     total,
     missing,
     outstanding,
-    people: peopleWithAmounts,
+    people,
     days,
+    dayDates,
     percentage,
+    available: Math.max(0, total - spent),
+    spent,
   };
 }
 export function initials(name: string) {
   return name
+    .trim()
     .split(/\s+/)
     .slice(0, 2)
-    .map((part) => part[0])
+    .map((part) => part[0] ?? '')
     .join('');
 }

@@ -84,48 +84,53 @@ export function CollectionSharePanel({
       <p className={styles.summary}>
         <strong>{collection.title}</strong>
         <br />
-        Your link and QR open the same payer preview.
+        Share the link or QR code.
       </p>
       <div className={styles.layout}>
         <div className={styles.linkPanel}>
           <span className={styles.badge}>FRONTEND DEMO</span>
           <label htmlFor="collection-preview-link">Preview link</label>
-          <input
-            ref={inputRef}
-            id="collection-preview-link"
-            value={url}
-            readOnly
-            onFocus={(event) => event.target.select()}
-          />
-          <div className={styles.buttons}>
+          <div className={styles.linkRow}>
+            <input
+              ref={inputRef}
+              id="collection-preview-link"
+              value={url}
+              readOnly
+              onFocus={(event) => event.target.select()}
+            />
             <button type="button" onClick={() => void copy(url, 'Preview link')}>
               Copy link
+            </button>
+          </div>
+          <div className={styles.buttons}>
+            <button
+              type="button"
+              onClick={() =>
+                void shareCollectionLink(
+                  collection.title,
+                  url,
+                  collection.invitationMessage ?? undefined,
+                ).then(setMessage)
+              }
+            >
+              Share link
             </button>
             <Link href={url} target="_blank" rel="noreferrer">
               Open payer preview ↗
             </Link>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              void shareCollectionLink(
-                collection.title,
-                url,
-                collection.invitationMessage ?? undefined,
-              ).then(setMessage)
-            }
-          >
-            Share link
-          </button>
-          <div className={styles.invitation}>
-            <strong>Your invitation</strong>
+          <details className={styles.invitation}>
+            <summary>View your invitation</summary>
             <p>{collection.invitationMessage?.replaceAll('[link]', url)}</p>
-          </div>
-          <p className={styles.notice}>
-            This link and its payment data are deleted after one hour, or when everyone has
-            paid / the limit is reached. Sharing across devices and real payments will be
-            available after the backend is connected.
-          </p>
+          </details>
+          <details className={styles.notice}>
+            <summary>About this preview</summary>
+            <p>
+              The payment link expires after one hour, or when everyone has paid / the limit is
+              reached. Your owner dashboard stays saved until you delete it. Cross-device
+              payments need the backend connection.
+            </p>
+          </details>
           <p className={styles.progress}>
             {collection.progress.paidSpots}{' '}
             {collection.progress.paidSpots === 1 ? 'person' : 'people'} chipped in · demo
@@ -152,10 +157,7 @@ export function CollectionSharePanel({
           >
             Share QR code
           </button>
-          <p>
-            The receiving device must be able to reach this address. Preview data stays in this
-            browser.
-          </p>
+          <p>Scan to open the same link. Preview data stays in this browser.</p>
         </div>
       </div>
       <p className={styles.status} role="status">

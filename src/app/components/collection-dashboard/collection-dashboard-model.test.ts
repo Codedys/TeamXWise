@@ -1,82 +1,181 @@
 import { describe, expect, it } from 'vitest';
 import { dashboardModel } from './collection-dashboard-model';
-import { defaultDashboardPreferences } from './dashboard-settings';
-import type { CollectionDashboard } from './collection-dashboard-client';
-const fixture = (changes: Partial<CollectionDashboard> = {}): CollectionDashboard => ({
-  id: 'demo',
-  isOpen: true,
-  samplePaidCount: null,
-  statisticsPriceMinorUnits: null,
-  preferences: defaultDashboardPreferences(),
-  invitationMessage: null,
-  title: 'Rome',
-  audience: 'group',
-  currency: 'EUR',
-  priceMinorUnits: 35934,
-  deadline: null,
-  expectedCount: 15,
-  limitType: 'none',
-  spotLimit: 80,
-  goalMinorUnits: 120000,
-  customQuestion: null,
-  paidCount: 0,
-  collectedMinorUnits: 0,
-  expiresAt: 123,
-  visible: true,
-  status: 'active',
-  ...changes,
-});
-describe('owner dashboard fixtures', () => {
-  it('matches the group reference and updates fictional activity with local demo payments', () => {
-    expect(dashboardModel(fixture())).toMatchObject({
-      paid: 9,
-      missing: 6,
-      total: 323406,
-      outstanding: 215604,
+import {
+  collectionDashboardSchema,
+  type CollectionDashboard,
+} from './collection-dashboard-client';
+import { paymentReceiptPreviewSchema } from '../collection-preview/collection-preview-client';
+
+const fixture = (changes: Partial<CollectionDashboard> = {}) =>
+  collectionDashboardSchema.parse({
+    id: 'demo',
+    title: 'Rome',
+    audience: 'group',
+    currency: 'EUR',
+    priceMinorUnits: 6000,
+    deadline: null,
+    expectedCount: 2,
+    limitType: 'none',
+    spotLimit: 80,
+    goalMinorUnits: 120000,
+    customQuestion: null,
+    paidCount: 0,
+    collectedMinorUnits: 0,
+    expiresAt: 123,
+    visible: true,
+    status: 'active',
+    ...changes,
+  });
+const receipt = (changes: Record<string, unknown> = {}) =>
+  paymentReceiptPreviewSchema.parse({
+    id: 'payment',
+    requestId: 'request',
+    participantId: 'emma',
+    payerName: 'Emma Ilves',
+    quantity: 1,
+    sourceMinorUnits: 6000,
+    sourceCurrency: 'EUR',
+    payMinorUnits: 6000,
+    payCurrency: 'EUR',
+    rate: 1,
+    method: 'instant',
+    status: 'paid',
+    paidAt: new Date(2026, 10, 14, 12).getTime(),
+    ...changes,
+  });
+describe('saved owner dashboard data', () => {
+  it('shows the saved roster and pending status without inventing names or payments', () => {
+    const model = dashboardModel(
+      fixture({
+        participants: [
+          { id: 'emma', name: 'Emma Ilves', status: 'paid' },
+          { id: 'karl', name: 'Karl Rebane', status: 'pending' },
+        ],
+        payments: [receipt()],
+        paidCount: 1,
+        collectedMinorUnits: 6000,
+      }),
+      '2026-11-14',
+    );
+    expect(model).toMatchObject({
+      paid: 1,
+      missing: 1,
+      total: 6000,
+      outstanding: 6000,
+      available: 6000,
     });
-    expect(dashboardModel(fixture({ paidCount: 1, collectedMinorUnits: 35934 })).paid).toBe(
-      10,
-    );
+    expect(model.people.map((person) => person.name)).toEqual(['Emma Ilves', 'Karl Rebane']);
+    expect(model.people[1]).toMatchObject({
+      paid: false,
+      status: 'Bank transfer pending',
+      amountMinorUnits: 0,
+    });
+    expect(model.days).toEqual([0, 0, 0, 0, 0, 1]);
   });
-  it('matches the 34 of 80 event reference and never adds a fake capacity for no-limit links', () => {
-    const event = dashboardModel(
-      fixture({ audience: 'anyone', limitType: 'spots', priceMinorUnits: 1500 }),
-    );
-    expect(event).toMatchObject({ paid: 34, target: 80, total: 51000 });
-    expect(event.people.reduce((sum, person) => sum + person.quantity, 0)).toBe(34);
-    expect(event.people[0].quantity).toBe(2);
-    expect(event.days.reduce((sum, count) => sum + count, 0)).toBe(event.paid);
-    expect(dashboardModel(fixture({ audience: 'anyone' })).target).toBeNull();
-  });
-  it('preserves collected totals after a price change and makes exported rows sum to that total', () => {
+  it('uses open-link receipts, original amounts, quantities and answers; pending payments do not count', () => {
     const model = dashboardModel(
       fixture({
         audience: 'anyone',
         limitType: 'spots',
-        priceMinorUnits: 2000,
-        statisticsPriceMinorUnits: 1500,
-        paidCount: 1,
-        collectedMinorUnits: 1500,
+        priceMinorUnits: 8000,
+        payments: [
+          receipt({
+            participantId: null,
+            quantity: 2,
+            sourceMinorUnits: 12000,
+            answer: 'Nuts',
+          }),
+          receipt({
+            id: 'pending',
+            participantId: null,
+            payerName: 'Karl',
+            status: 'pending',
+            paidAt: null,
+            answer: null,
+          }),
+        ],
+        paidCount: 2,
+        collectedMinorUnits: 12000,
       }),
+      '2026-11-14',
     );
-    expect(model.total).toBe(52500);
+    expect(model).toMatchObject({ paid: 2, target: 80, total: 12000 });
+    expect(model.people[0]).toMatchObject({
+      quantity: 2,
+      answer: 'Nuts',
+      amountMinorUnits: 12000,
+    });
     expect(model.people.reduce((sum, person) => sum + person.amountMinorUnits, 0)).toBe(
       model.total,
     );
+    expect(model.days[5]).toBe(2);
   });
-  it('caps completed goal progress at the final full-price contribution', () => {
+  it('does not label a settled legacy receipt pending just because its date is unavailable', () => {
+    const model = dashboardModel(
+      fixture({
+        audience: 'anyone',
+        payments: [receipt({ paidAt: null })],
+        paidCount: 1,
+        collectedMinorUnits: 6000,
+      }),
+    );
+    expect(model.people[0]).toMatchObject({
+      paid: true,
+      when: 'Paid · date unavailable',
+      paidOn: '',
+    });
+    expect(model.days).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+  it('does not invent a capacity for no-limit links or names for old summaries', () => {
+    const model = dashboardModel(
+      fixture({ audience: 'anyone', paidCount: 5, collectedMinorUnits: 30000 }),
+    );
+    expect(model).toMatchObject({ target: null, percentage: null, total: 30000, people: [] });
+    expect(model.days).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+  it('caps a completed goal at 100% and keeps gross collected separate from money used', () => {
     expect(
       dashboardModel(
         fixture({
           audience: 'anyone',
           limitType: 'goal',
           goalMinorUnits: 10000,
-          priceMinorUnits: 1500,
           paidCount: 7,
           collectedMinorUnits: 10500,
           status: 'complete',
+          disbursements: [
+            {
+              requestId: 'bill',
+              kind: 'bill',
+              recipient: 'Bus',
+              reference: '',
+              amountMinorUnits: 4000,
+              createdAt: 1,
+            },
+          ],
         }),
       ),
-    ).toMatchObject({ paid: 7, total: 10500, percentage: 100 });
+    ).toMatchObject({ paid: 7, total: 10500, percentage: 100, available: 6500, spent: 4000 });
+  });
+  it('uses real calendar dates across month boundaries and excludes older payments from the six-day chart', () => {
+    const model = dashboardModel(
+      fixture({
+        audience: 'anyone',
+        payments: [
+          receipt({ paidAt: new Date(2026, 9, 31, 12).getTime() }),
+          receipt({ id: 'older', paidAt: new Date(2026, 9, 20, 12).getTime() }),
+        ],
+      }),
+      '2026-11-02',
+    );
+    expect(model.dayDates).toEqual([
+      '2026-10-28',
+      '2026-10-29',
+      '2026-10-30',
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-02',
+    ]);
+    expect(model.days).toEqual([0, 0, 0, 1, 0, 0]);
   });
 });
