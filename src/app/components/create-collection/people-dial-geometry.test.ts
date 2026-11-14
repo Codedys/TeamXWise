@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   angleDelta,
+  dialPointerAngle,
   clampPeople,
   peopleAfterRotation,
   wheelPeopleDelta,
@@ -25,5 +26,26 @@ describe('people dial gestures', () => {
     expect(wheelPeopleDelta(-2.5, 1)).toBe(-1);
     expect(wheelPeopleDelta(1, 2)).toBe(10);
     expect(wheelPeopleDelta(4, 0)).toBe(0.1);
+  });
+  it('uses the same circular gesture geometry at phone and desktop sizes', () => {
+    const desktop = dialPointerAngle(260, 120, { left: 0, top: 0, width: 720 });
+    const scale = 342 / 720;
+    const phone = dialPointerAngle(18 + 260 * scale, 200 + 120 * scale, {
+      left: 18,
+      top: 200,
+      width: 342,
+    });
+    expect(phone).toBeCloseTo(desktop, 10);
+    const desktopNext = dialPointerAngle(220, 140, { left: 0, top: 0, width: 720 });
+    const phoneNext = dialPointerAngle(18 + 220 * scale, 200 + 140 * scale, {
+      left: 18,
+      top: 200,
+      width: 342,
+    });
+    expect(peopleAfterRotation(12, angleDelta(phone, phoneNext))).toBeCloseTo(
+      peopleAfterRotation(12, angleDelta(desktop, desktopNext)),
+      10,
+    );
+    expect(dialPointerAngle(0, 0, { left: 0, top: 0, width: 0 })).toBe(0);
   });
 });

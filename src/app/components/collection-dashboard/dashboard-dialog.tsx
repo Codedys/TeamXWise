@@ -9,6 +9,7 @@ export function DashboardDialog({
   onClose,
   children,
   drawer = true,
+  bottomSheet = false,
 }: {
   title: string;
   eyebrow?: string;
@@ -16,6 +17,7 @@ export function DashboardDialog({
   onClose: () => void;
   children: ReactNode;
   drawer?: boolean;
+  bottomSheet?: boolean;
 }) {
   const mounted = useRef(false);
   const ref = useRef<HTMLDialogElement>(null);
@@ -32,13 +34,25 @@ export function DashboardDialog({
   return (
     <dialog
       ref={ref}
-      className={`${styles.dialog} ${drawer ? styles.drawer : styles.modal}`}
+      className={`${styles.dialog} ${drawer ? styles.drawer : styles.modal} ${bottomSheet ? styles.bottomSheet : ''}`}
       aria-labelledby={id}
       onCancel={onClose}
+      onClick={(event) => {
+        if (!bottomSheet || event.target !== event.currentTarget) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom
+        )
+          onClose();
+      }}
       onClose={() => {
         if (mounted.current && !ref.current?.open) onClose();
       }}
     >
+      {bottomSheet && <div className={styles.sheetHandle} aria-hidden="true" />}
       <header className={styles.panelHeader}>
         <div>
           {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}

@@ -57,6 +57,7 @@ export function DashboardRemindersPanel({
   return (
     <DashboardDialog
       title="Reminders"
+      bottomSheet
       eyebrow={collection.title}
       onClose={onClose}
       subtitle={selected ? `For ${selected.name}` : `${unpaid.length} people still to pay`}

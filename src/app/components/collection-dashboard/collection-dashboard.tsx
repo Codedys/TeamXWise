@@ -207,6 +207,37 @@ export function CollectionDashboard({
           Your saved owner record remains available here.
         </p>
       )}
+      <section className={styles.mobileSummary} aria-label="Mobile collection progress">
+        <p>Collected so far</p>
+        <div className={styles.mobileTotal}>
+          <strong>{money(model.total)}</strong>
+          {model.target !== null && (
+            <span>
+              of{' '}
+              {money(
+                collection.limitType === 'goal' && !model.group
+                  ? collection.goalMinorUnits
+                  : model.total + model.outstanding,
+              )}
+            </span>
+          )}
+        </div>
+        {model.percentage !== null && (
+          <div className={styles.mobileTrack}>
+            <span style={{ width: `${model.percentage}%` }} />
+          </div>
+        )}
+        <div className={styles.mobileSummaryFooter}>
+          <strong>
+            {model.group
+              ? `${model.paid} of ${collection.expectedCount} have paid`
+              : collection.limitType === 'spots'
+                ? `${model.paid} of ${collection.spotLimit} spots taken`
+                : `${model.paid} people chipped in`}
+          </strong>
+          <span>{daysLeft === null ? 'No closing date' : `${daysLeft} days left`}</span>
+        </div>
+      </section>
       <div className={styles.columns}>
         <div className={styles.stack}>
           <section
@@ -272,7 +303,7 @@ export function CollectionDashboard({
               </div>
             </dl>
           </section>
-          <section className={styles.card}>
+          <section className={`${styles.card} ${styles.balanceCard}`}>
             <p>Available balance</p>
             <h2 className={styles.collected}>{money(model.available)}</h2>
             <p>Kept apart for {collection.title}.</p>
@@ -287,7 +318,7 @@ export function CollectionDashboard({
           </section>
         </div>
         <div className={styles.stack}>
-          <section className={styles.card}>
+          <section className={`${styles.card} ${styles.peopleCard}`}>
             {model.group && (
               <div className={styles.missing}>
                 <span className={styles.warning}>!</span>
@@ -322,16 +353,28 @@ export function CollectionDashboard({
                   <span className={styles.avatar}>{initials(person.name)}</span>
                   <div>
                     <strong>{person.name}</strong>
-                    <p>{model.group ? person.status : person.when || person.status}</p>
+                    <p>
+                      <span className={styles.mobileQuantity}>
+                        {!model.group
+                          ? `${person.quantity} ${person.quantity === 1 ? 'person' : 'people'} · `
+                          : ''}
+                      </span>
+                      {model.group ? person.status : person.when || person.status}
+                    </p>
                   </div>
                   {model.group ? (
                     <button disabled={!active} onClick={() => openReminders(person.id)}>
                       Remind
                     </button>
                   ) : (
-                    <b>
-                      {person.quantity} {person.quantity === 1 ? 'person' : 'people'}
-                    </b>
+                    <>
+                      <b className={styles.desktopQuantity}>
+                        {person.quantity} {person.quantity === 1 ? 'person' : 'people'}
+                      </b>
+                      <b className={styles.mobilePersonAmount}>
+                        {person.paid ? money(person.amountMinorUnits) : 'Pending'}
+                      </b>
+                    </>
                   )}
                 </div>
               ))}
@@ -492,6 +535,14 @@ export function CollectionDashboard({
         payment link.
       </p>
       <DeleteCollectionButton collectionId={collectionId} />
+      <nav className={styles.mobileDock} aria-label="Collection actions">
+        <button className={styles.primary} onClick={() => setPanel('share')}>
+          Share link
+        </button>
+        <button onClick={() => (model.group ? openReminders() : openManage())}>
+          {model.group ? 'Reminders' : 'Manage link'}
+        </button>
+      </nav>
       {panel === 'share' && (
         <DashboardShareDialog
           collection={collection}

@@ -441,6 +441,62 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
             onSubmit={continueForm}
             noValidate
           >
+            <nav className={styles.mobileHeader} aria-label="Collection setup progress">
+              {draft.step === 0 ? (
+                <Link
+                  className={styles.mobileBack}
+                  href="/chip-in"
+                  aria-label="Back to Chip in"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m14 6-6 6 6 6" />
+                  </svg>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.mobileBack}
+                  onClick={goBack}
+                  aria-label="Previous step"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m14 6-6 6 6 6" />
+                  </svg>
+                </button>
+              )}
+              <div className={styles.mobileSegments} aria-hidden="true">
+                {steps.map((step) => (
+                  <span key={step.id} data-complete={sharing || step.id <= draft.step} />
+                ))}
+              </div>
+              <span className={styles.mobileCount}>
+                {sharing ? 'Share' : `${stepIndex + 1} of ${steps.length}`}
+              </span>
+              <button
+                type="button"
+                className={styles.mobileCancel}
+                onClick={cancelSetup}
+                aria-label="Cancel collection setup"
+              >
+                ×
+              </button>
+            </nav>
             <div className={styles.formContent}>
               <div className={styles.stepHeader}>
                 <p className={styles.stepCount}>

@@ -82,3 +82,11 @@ Backend handoff: replace this operation with an authenticated payout/bill-paymen
 `components/icons/wise-check.tsx` uses the unchanged official `Check` SVG path from `@transferwise/icons` 4.8.0, reused by completed wizard steps, audience/limit choices, the no-deadline checkbox and paid participant labels. Attribution and the Apache-2.0 license are in `public/licenses/wise-icons.txt`. No raster screenshot or new runtime dependency is used.
 
 The wizard fits the dynamic viewport; its form body scrolls independently while Back and the next action remain visible. Review uses **Get my link** for both branches, and the final share screen uses **View dashboard** for its destination. **Copy link** sits beside the URL; invitation and preview details expand without pushing navigation off screen. Link publication, copy/share behavior, saved drafts and owner activation are unchanged.
+
+## Mobile presentation
+
+At phone widths (up to 700px), the creation wizard replaces its desktop sidebar with a back button, seven progress segments, a step counter and cancel control. All navigation calls the same validation and draft-update handlers. A full-width bottom action stays outside the scrolling form content. Amount entry, limits, the calendar, names and review cards use a single-column layout.
+
+Payer views reuse the same checkout state and client. Mobile checkout adds a top back button and a bottom bank/card method toggle; returning to details preserves entered values. The primary action remains visible while the form body scrolls. The success view keeps its confetti, jar and actions in a compact green layout, with reduced-motion support unchanged.
+
+Both owner dashboards use a dark mobile summary, the saved people/payment list, and a fixed share/manage action bar. The balance, exports, reminders, QR sharing, settings and delete controls remain available. All totals and names use the existing local data; no extra fixture statistics are introduced. Desktop layouts retain their existing presentation.
