@@ -39,6 +39,9 @@ const pendingReceipt: PaymentReceiptViewModel = {
   rate: 1,
   method: 'bank',
   status: 'pending',
+  answer: null,
+  createdAt: Date.now(),
+  paidAt: null,
 };
 
 describe('payer preview presentation', () => {
@@ -55,6 +58,7 @@ describe('payer preview presentation', () => {
     expect(render()).toContain('TRANSFER PENDING.');
     expect(render()).toContain('Simulate bank confirmation');
     expect(render()).not.toContain('BOOM. CHIPPED IN.');
+    expect(render()).not.toContain('data-celebration-confetti');
   });
 
   it('labels a successful payment accurately', () => {
@@ -62,12 +66,13 @@ describe('payer preview presentation', () => {
       renderToStaticMarkup(
         createElement(PaymentResult, {
           collection,
-          receipt: { ...pendingReceipt, status: 'paid' },
+          receipt: { ...pendingReceipt, status: 'paid', paidAt: Date.now() },
           onAnother: () => {},
           onConfirmed: () => {},
         }),
       );
     expect(render()).toContain('BOOM. CHIPPED IN.');
+    expect(render()).toContain('data-celebration-confetti="true"');
     expect(render()).toContain('NO MONEY MOVED');
     expect(render()).toContain('chip-in-success.png');
   });

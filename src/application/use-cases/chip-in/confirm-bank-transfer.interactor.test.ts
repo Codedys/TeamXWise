@@ -66,6 +66,7 @@ describe('ConfirmBankTransferInteractor', () => {
       email: '',
       answer: '',
       today: '2026-01-01',
+      now: new Date('2026-01-01T00:00:00.000Z'),
     });
     expect(submitPresenter.successResponse?.status).toBe('pending');
 
@@ -74,6 +75,7 @@ describe('ConfirmBankTransferInteractor', () => {
       chipInId: '11111111-1111-1111-1111-111111111111',
       receiptId: '33333333-3333-3333-3333-333333333333',
       today: '2026-01-02',
+      now: new Date('2026-01-02T00:00:00.000Z'),
     });
 
     expect(confirmPresenter.error).toBeNull();

@@ -64,6 +64,9 @@ function toDomainReceipt(row: PaymentRow): PaymentReceipt {
     rate: row.rate,
     method: row.method as 'instant' | 'bank',
     status: row.status as 'pending' | 'paid',
+    answer: row.answer,
+    createdAt: row.createdAt,
+    paidAt: row.paidAt,
   });
 }
 
@@ -82,6 +85,9 @@ function toPaymentRow(receipt: PaymentReceipt, chipInId: string) {
     rate: receipt.rate,
     method: receipt.method,
     status: receipt.status,
+    answer: receipt.answer,
+    createdAt: receipt.createdAt,
+    paidAt: receipt.paidAt,
   };
 }
 
@@ -242,7 +248,7 @@ export class DrizzleChipInRepository implements ChipInRepository {
       await this.persistChanges(tx, id, before, after);
       await tx
         .update(chipInPaymentsTable)
-        .set({ status: receipt.status })
+        .set({ status: receipt.status, paidAt: receipt.paidAt })
         .where(eq(chipInPaymentsTable.id, receipt.id));
       return receipt;
     });
@@ -257,14 +263,21 @@ export class DrizzleChipInRepository implements ChipInRepository {
       .from(chipInsTable)
       .where(and(eq(chipInsTable.id, id.toString()), eq(chipInsTable.ownerToken, ownerToken)));
     if (!row) return null;
-    const participantRows = await this.db
-      .select()
-      .from(chipInParticipantsTable)
-      .where(eq(chipInParticipantsTable.chipInId, id.toString()));
+    const [participantRows, paymentRows] = await Promise.all([
+      this.db
+        .select()
+        .from(chipInParticipantsTable)
+        .where(eq(chipInParticipantsTable.chipInId, id.toString())),
+      this.db
+        .select()
+        .from(chipInPaymentsTable)
+        .where(eq(chipInPaymentsTable.chipInId, id.toString())),
+    ]);
     return {
       chipIn: toDomainChipIn(row, participantRows),
       preferences: row.preferences,
       isActivated: row.isActivated,
+      receipts: paymentRows.map(toDomainReceipt),
     };
   }
 
@@ -275,14 +288,21 @@ export class DrizzleChipInRepository implements ChipInRepository {
       .where(and(eq(chipInsTable.ownerToken, ownerToken), eq(chipInsTable.isActivated, true)));
     return Promise.all(
       rows.map(async (row) => {
-        const participantRows = await this.db
-          .select()
-          .from(chipInParticipantsTable)
-          .where(eq(chipInParticipantsTable.chipInId, row.id));
+        const [participantRows, paymentRows] = await Promise.all([
+          this.db
+            .select()
+            .from(chipInParticipantsTable)
+            .where(eq(chipInParticipantsTable.chipInId, row.id)),
+          this.db
+            .select()
+            .from(chipInPaymentsTable)
+            .where(eq(chipInPaymentsTable.chipInId, row.id)),
+        ]);
         return {
           chipIn: toDomainChipIn(row, participantRows),
           preferences: row.preferences,
           isActivated: row.isActivated,
+          receipts: paymentRows.map(toDomainReceipt),
         };
       }),
     );

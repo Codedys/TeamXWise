@@ -11,6 +11,7 @@ export interface SubmitPaymentRequest {
   answer: string;
   expectedSourceMinorUnits?: number;
   today: string;
+  now: Date;
 }
 
 export interface SubmitPaymentInputPort {

@@ -20,7 +20,8 @@ export class ConfirmBankTransferInteractor implements ConfirmBankTransferInputPo
       const receipt = await this.repository.confirmPendingPayment(
         id,
         request.receiptId,
-        (chipIn, pendingReceipt) => chipIn.confirmPendingPayment(pendingReceipt, request.today),
+        (chipIn, pendingReceipt) =>
+          chipIn.confirmPendingPayment(pendingReceipt, request.today, request.now),
       );
       this.outputPort.presentSuccess(toPaymentReceiptResponse(receipt));
     } catch (error) {

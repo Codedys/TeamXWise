@@ -120,11 +120,11 @@ export function CollectionPayment({
         <AnimatePresence mode="wait" initial={false}>
           {showReceipt ? (
             <motion.div
-              key="receipt"
+              key={`receipt-${receipt?.status}`}
               style={{ width: '100%' }}
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              initial={{ y: '100dvh' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100dvh' }}
               transition={{ type: 'spring', stiffness: 260, damping: 32 }}
             >
               <PaymentResult
@@ -141,7 +141,7 @@ export function CollectionPayment({
               style={{ width: '100%' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ x: '-6%', opacity: 0 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease }}
             >
               <div className={styles.payerLayout}>
@@ -150,7 +150,9 @@ export function CollectionPayment({
                   <h2>{collection!.title}</h2>
                   <strong>
                     {displayMoney(collection!.priceMinorUnits, collection!.currency)} each
-                    {collection!.deadline ? `, due ${shortDeadline(collection!.deadline)}` : ''}
+                    {collection!.deadline
+                      ? `, due ${shortDeadline(collection!.deadline)}`
+                      : ''}
                   </strong>
                   {collection!.description && (
                     <p className={styles.occasionDescription}>{collection!.description}</p>

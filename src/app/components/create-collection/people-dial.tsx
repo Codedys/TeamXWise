@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
   angleDelta,
+  dialPointerAngle,
+  DIAL_GEOMETRY,
   clampPeople,
   peopleAfterRotation,
   wheelPeopleDelta,
@@ -31,6 +33,15 @@ export function PeopleDial({
   const panelRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragSession | null>(null);
   const wheelRemainder = useRef(0);
+  const frame = useRef<number | null>(null);
+  const pendingValue = useRef<number | null>(null);
+  const lastCommitted = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+    },
+    [],
+  );
   const [visualValue, setVisualValue] = useState<number | null>(null);
   const selected = Math.round(clampPeople(value.trim() ? Number(value) : 12));
   const rotationValue = visualValue ?? selected;
@@ -59,10 +70,25 @@ export function PeopleDial({
   }, [selected, onChange]);
 
   function pointerAngle(event: PointerEvent<HTMLDivElement>) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - (bounds.left + bounds.width / 2);
-    const y = event.clientY - (bounds.top + (bounds.height * 530) / 370);
-    return (Math.atan2(y, x) * 180) / Math.PI;
+    return dialPointerAngle(
+      event.clientX,
+      event.clientY,
+      event.currentTarget.getBoundingClientRect(),
+    );
+  }
+  function stopFrame() {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+  }
+  function release() {
+    stopFrame();
+    if (pendingValue.current !== null) {
+      const rounded = Math.round(pendingValue.current);
+      if (rounded !== lastCommitted.current) onChange(String(rounded));
+    }
+    pendingValue.current = null;
+    drag.current = null;
+    setVisualValue(null);
   }
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
@@ -76,6 +102,8 @@ export function PeopleDial({
       rotation: 0,
       start: selected,
     };
+    lastCommitted.current = selected;
+    pendingValue.current = selected;
     setVisualValue(selected);
   }
 
@@ -91,14 +119,24 @@ export function PeopleDial({
       current.start = next;
       current.rotation = 0;
     }
-    setVisualValue(next);
-    onChange(String(Math.round(next)));
+    pendingValue.current = next;
+    if (frame.current === null)
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null;
+        const value = pendingValue.current;
+        if (value === null) return;
+        setVisualValue(value);
+        const rounded = Math.round(value);
+        if (rounded !== lastCommitted.current) {
+          lastCommitted.current = rounded;
+          onChange(String(rounded));
+        }
+      });
   }
 
   function endDrag(event: PointerEvent<HTMLDivElement>) {
     if (drag.current?.pointerId !== event.pointerId) return;
-    drag.current = null;
-    setVisualValue(null);
+    release();
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
   }
@@ -128,7 +166,7 @@ export function PeopleDial({
   }
 
   return (
-    <div ref={panelRef} className={styles.panel}>
+    <div ref={panelRef} className={styles.panel} data-dragging={visualValue !== null}>
       <div className={styles.valueArea}>
         <input
           id="people-count"
@@ -163,35 +201,53 @@ export function PeopleDial({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onLostPointerCapture={() => {
-          drag.current = null;
-          setVisualValue(null);
+          if (drag.current) release();
         }}
         onKeyDown={keyDown}
       >
-        <svg viewBox="0 0 720 370" preserveAspectRatio="none" aria-hidden="true">
-          <circle cx="360" cy="530" r="330" fill="#163300" />
-          <g transform={`rotate(${-rotationValue * DEGREES_PER_PERSON} 360 530)`}>
+        <svg
+          viewBox={`0 0 ${DIAL_GEOMETRY.width} ${DIAL_GEOMETRY.height}`}
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
+          <circle
+            cx={DIAL_GEOMETRY.centerX}
+            cy={DIAL_GEOMETRY.centerY}
+            r={DIAL_GEOMETRY.radius}
+            fill="#102b00"
+          />
+          <g
+            className={styles.ticks}
+            style={{
+              transform: `rotate(${-rotationValue * DEGREES_PER_PERSON}deg)`,
+              transformOrigin: `${DIAL_GEOMETRY.centerX}px ${DIAL_GEOMETRY.centerY}px`,
+            }}
+          >
             {Array.from({ length: lastTick - firstTick + 1 }, (_, i) => {
               const number = firstTick + i;
               return (
-                <g key={number} transform={`rotate(${number * DEGREES_PER_PERSON} 360 530)`}>
+                <g
+                  key={number}
+                  transform={`rotate(${number * DEGREES_PER_PERSON} ${DIAL_GEOMETRY.centerX} ${DIAL_GEOMETRY.centerY})`}
+                >
                   <line
                     x1="360"
                     x2="360"
-                    y1="216"
-                    y2={number % 5 === 0 ? '246' : '232'}
-                    stroke={number === selected ? '#9fe870' : '#66894c'}
+                    y1="86"
+                    y2={number % 5 === 0 ? '116' : '104'}
+                    stroke={number === selected ? '#9fe870' : '#73965b'}
                     strokeWidth={number % 5 === 0 ? 5 : 4}
                     strokeLinecap="round"
                   />
                   {number % 5 === 0 && (
                     <text
                       x="360"
-                      y="279"
+                      y="154"
                       fill="#fff"
                       textAnchor="middle"
-                      fontSize="22"
+                      fontSize="28"
                       fontWeight="700"
+                      transform={`rotate(${-(number - rotationValue) * DEGREES_PER_PERSON} 360 154)`}
                     >
                       {number}
                     </text>
@@ -200,7 +256,7 @@ export function PeopleDial({
               );
             })}
           </g>
-          <path d="M360 178v24" stroke="#163300" strokeWidth="7" strokeLinecap="round" />
+          <path d="M360 44v24" stroke="#102b00" strokeWidth="7" strokeLinecap="round" />
         </svg>
       </div>
       <button

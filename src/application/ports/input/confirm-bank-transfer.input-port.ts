@@ -2,6 +2,7 @@ export interface ConfirmBankTransferRequest {
   chipInId: string;
   receiptId: string;
   today: string;
+  now: Date;
 }
 
 export interface ConfirmBankTransferInputPort {

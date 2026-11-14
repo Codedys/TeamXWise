@@ -1,5 +1,7 @@
 'use client';
 
+import { CurrencySelect } from '../currency-select/currency-select';
+
 import {
   amountInMinorUnits,
   displayMoney,
@@ -30,18 +32,7 @@ export function ContributionStep({
   return (
     <>
       <label className={styles.currencyChoice}>
-        Currency{' '}
-        <select
-          aria-label="Currency"
-          value={draft.currency}
-          onChange={(event) =>
-            onCurrencyChange(event.target.value as CreateCollectionDraft['currency'])
-          }
-        >
-          <option>EUR</option>
-          <option>GBP</option>
-          <option>USD</option>
-        </select>
+        Currency <CurrencySelect value={draft.currency} onChange={onCurrencyChange} />
       </label>
       <div className={styles.amountPanel}>
         <button
@@ -90,30 +81,27 @@ export function ContributionStep({
         </p>
       )}
       <div className={styles.amountPresets}>
-        {(draft.audience === 'anyone' ? [5, 10, 15, 25] : [5, 20, 60, 100]).map(
-          (preset) => (
-            <button
-              key={preset}
-              type="button"
-              aria-pressed={amount === preset * 100}
-              onClick={() => onAmountChange(String(preset))}
-            >
-              {displayMoney(preset * 100, draft.currency)}
-            </button>
-          ),
-        )}
+        {(draft.audience === 'anyone' ? [5, 10, 15, 25] : [5, 20, 60, 100]).map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            aria-pressed={amount === preset * 100}
+            onClick={() => onAmountChange(String(preset))}
+          >
+            {displayMoney(preset * 100, draft.currency)}
+          </button>
+        ))}
       </div>
       <p id="amount-total" className={styles.summaryStrip}>
         {draft.audience === 'anyone' ? (
           <>
-            Each person pays {displayMoney(amount, draft.currency)}. They can pay for a
-            friend too.
+            Each person pays {displayMoney(amount, draft.currency)}. They can pay for a friend
+            too.
           </>
         ) : (
           <>
             {draft.peopleCount} people × {displayMoney(amount, draft.currency)} ={' '}
-            {displayMoney(amount * (Number(draft.peopleCount) || 0), draft.currency)} in
-            total
+            {displayMoney(amount * (Number(draft.peopleCount) || 0), draft.currency)} in total
           </>
         )}
       </p>

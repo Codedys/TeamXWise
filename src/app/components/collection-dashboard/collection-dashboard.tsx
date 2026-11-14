@@ -4,6 +4,7 @@ import QRCode from 'react-qr-code';
 import { useEffect, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { getChipInDashboardAction, saveDashboardPreferencesAction } from '@/app/actions';
+import { listLocalDisbursements } from './local-disbursements';
 import type { CollectionDashboard as Dashboard } from './collection-dashboard-client';
 import { DeleteCollectionButton } from './delete-collection-button';
 import { dashboardModel, initials } from './collection-dashboard-model';
@@ -14,11 +15,14 @@ import { DashboardRemindersPanel } from './dashboard-reminders-panel';
 import { DashboardManageLinkPanel } from './dashboard-manage-link-panel';
 import { DashboardPeoplePanel } from './dashboard-people-panel';
 import { DashboardAnswersPanel } from './dashboard-answers-panel';
+import { DashboardBalancePanel } from './dashboard-balance-panel';
 import { CollectionCompletion } from './collection-completion';
-import { nextReminderDate } from './dashboard-settings';
 import { downloadDashboardCsv } from './dashboard-export';
 import styles from './collection-dashboard.module.css';
 
+const POLL_INTERVAL_MS = 2500;
+
+type Panel = 'share' | 'reminders' | 'manage' | 'people' | 'answers' | 'balance' | null;
 export function CollectionDashboard({
   collectionId,
   className = '',
@@ -31,9 +35,7 @@ export function CollectionDashboard({
   const [search, setSearch] = useState('');
   const [peopleScope, setPeopleScope] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [notice, setNotice] = useState('');
-  const [panel, setPanel] = useState<
-    'share' | 'reminders' | 'manage' | 'people' | 'answers' | null
-  >(null);
+  const [panel, setPanel] = useState<Panel>(null);
   const [personId, setPersonId] = useState<string | undefined>();
   const [manageStart, setManageStart] = useState<string | undefined>();
   const [finishPreview, setFinishPreview] = useState(false);
@@ -42,9 +44,8 @@ export function CollectionDashboard({
   const [peopleRef] = useAutoAnimate({ duration: 200 });
   useEffect(() => {
     if (!collection) return;
-    const pct = dashboardModel(collection).percentage;
-    const t = setTimeout(() => setRingPct(pct !== null ? pct : 100), 60);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setRingPct(dashboardModel(collection).percentage ?? 0), 60);
+    return () => clearTimeout(timer);
   }, [collection]);
   useEffect(() => {
     let active = true;
@@ -52,7 +53,9 @@ export function CollectionDashboard({
       void getChipInDashboardAction(collectionId)
         .then((result) => {
           if (!active) return;
-          setCollection(result);
+          setCollection(
+            result ? { ...result, disbursements: listLocalDisbursements(collectionId) } : null,
+          );
           setLoaded(true);
           setUrl(
             new URL(`/chip-in/pay/${encodeURIComponent(collectionId)}`, window.location.origin)
@@ -63,7 +66,7 @@ export function CollectionDashboard({
           if (active) setLoaded(true);
         });
     refresh();
-    const timer = setInterval(refresh, 2500);
+    const timer = setInterval(refresh, POLL_INTERVAL_MS);
     return () => {
       active = false;
       clearInterval(timer);
@@ -82,27 +85,24 @@ export function CollectionDashboard({
         <Link href="/">Back to account</Link>
       </main>
     );
-  const model = dashboardModel(collection);
-  const money = (amount: number) => displayMoney(amount, collection.currency);
-  const deadline = collection.deadline
-    ? shortDeadline(collection.deadline)
-    : 'No closing date';
+  const today = localDateInput();
+  const model = dashboardModel(collection, today);
+  const money = (value: number) => displayMoney(value, collection.currency);
+  const deadline = collection.deadline ? shortDeadline(collection.deadline) : 'No closing date';
   const daysLeft = collection.deadline
-    ? Math.max(0, daysUntilDate(collection.deadline, localDateInput()))
+    ? Math.max(0, daysUntilDate(collection.deadline, today))
     : null;
+  const tokenAvailable = collection.status === 'active';
   const active =
-    collection.isOpen &&
-    collection.status === 'active' &&
-    (!collection.deadline || localDateInput() <= collection.deadline);
+    collection.isOpen && tokenAvailable && (!collection.deadline || today <= collection.deadline);
+  const paidPeople = model.people.filter((person) => person.paid);
+  const answers = paidPeople.filter((person) => person.answer);
   const filtered = model.people.filter(
     (person) =>
       (!model.group || !person.paid) &&
       person.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
   const visible = search ? filtered : filtered.slice(0, 8);
-  const tokenAvailable = collection.status === 'active';
-  const nextReminder = nextReminderDate(collection.preferences, collection.deadline, localDateInput());
-  const answers = model.people.filter((person) => person.paid && person.answer);
   function openReminders(id?: string) {
     setPersonId(id);
     setPanel('reminders');
@@ -111,16 +111,9 @@ export function CollectionDashboard({
     setManageStart(start);
     setPanel('manage');
   }
-  async function saveException() {
-    const result = await saveDashboardPreferencesAction(collectionId, {
-      ...collection!.preferences,
-      exceptionResolved: true,
-    });
-    setNotice(
-      result.status === 'error'
-        ? result.message
-        : 'Sample payment reviewed. No real payment was changed.',
-    );
+  function showPeople(scope: 'all' | 'paid' | 'unpaid') {
+    setPeopleScope(scope);
+    setPanel('people');
   }
   async function keepCompletion() {
     setFinishPreview(false);
@@ -146,21 +139,22 @@ export function CollectionDashboard({
         <p role="status">{notice}</p>
       </main>
     );
-  const noticeAction = (message: string) =>
-    setNotice(`${message} Demo only; no messages or money were sent.`);
-  const { currency, priceMinorUnits: currentPrice } = collection;
   function downloadList() {
     downloadDashboardCsv(
       [
-        ['Name', 'People', 'Status', `Amount (${currency})`],
+        ['Name', 'People', 'Status', `Amount (${collection!.currency})`],
         ...model.people.map((person) => [
           person.name,
           person.quantity,
-          person.paid ? 'Paid' : 'Unpaid',
-          ((person.paid ? person.amountMinorUnits : currentPrice) / 100).toFixed(2),
+          person.status,
+          (
+            (person.paid
+              ? person.amountMinorUnits
+              : collection!.priceMinorUnits * person.quantity) / 100
+          ).toFixed(2),
         ]),
       ],
-      'chip-in-demo-list.csv',
+      'chip-in-people.csv',
     );
   }
   return (
@@ -169,60 +163,103 @@ export function CollectionDashboard({
         <Link href="/">← Back to account</Link>
         <span className={styles.badge}>demo</span>
       </div>
-
       <header className={styles.header}>
         <div>
           <h1>{collection.title}</h1>
           <p>
             {money(collection.priceMinorUnits)}{' '}
             {model.group
-              ? `each · ${collection.expectedCount} people`
-              : 'per person · anyone with the link'}{' '}
-            · {model.group ? 'due' : 'closes'} {deadline}
+              ? `each, ${collection.expectedCount} people`
+              : 'per person, anyone with the link'}
+            {collection.deadline
+              ? `, ${model.group ? 'due' : 'closes'} ${deadline}`
+              : ', no closing date'}
           </p>
         </div>
         <div className={styles.actions}>
+          <button onClick={downloadList}>Download list</button>
           <button onClick={() => setPanel('share')}>Share link</button>
           <button
             className={styles.primary}
+            disabled={model.group && !model.missing}
             onClick={() => (model.group ? openReminders() : openManage())}
           >
             {model.group ? `Remind ${model.missing} people` : 'Manage link'}
           </button>
         </div>
       </header>
-
-      {(!active || collection.preferences.exceptionResolved === false) && (
-        <div className={styles.statusStrip}>
-          {!active && (
-            <p className={styles.closed}>
-              {collection.status === 'complete'
-                ? 'Collection complete.'
-                : collection.deadline && localDateInput() > collection.deadline
-                  ? 'This collection has closed.'
-                  : 'The organiser has paused this payment link.'}
-            </p>
+      {!active && (
+        <p className={styles.closed}>
+          {collection.status === 'complete'
+            ? 'Collection complete.'
+            : !collection.isOpen
+              ? 'The organiser has paused this payment link.'
+              : 'This collection has closed.'}{' '}
+          Your saved owner record remains available here.
+        </p>
+      )}
+      <section className={styles.mobileSummary} aria-label="Mobile collection progress">
+        <p>Collected so far</p>
+        <div className={styles.mobileTotal}>
+          <strong>{money(model.total)}</strong>
+          {model.target !== null && (
+            <span>
+              of{' '}
+              {money(
+                collection.limitType === 'goal' && !model.group
+                  ? collection.goalMinorUnits
+                  : model.total + model.outstanding,
+              )}
+            </span>
           )}
         </div>
-      )}
-
+        {model.percentage !== null && (
+          <div className={styles.mobileTrack}>
+            <span style={{ width: `${model.percentage}%` }} />
+          </div>
+        )}
+        <div className={styles.mobileSummaryFooter}>
+          <strong>
+            {model.group
+              ? `${model.paid} of ${collection.expectedCount} have paid`
+              : collection.limitType === 'spots'
+                ? `${model.paid} of ${collection.spotLimit} spots taken`
+                : `${model.paid} people chipped in`}
+          </strong>
+          <span>{daysLeft === null ? 'No closing date' : `${daysLeft} days left`}</span>
+        </div>
+      </section>
       <div className={styles.columns}>
-        {/* LEFT — progress metrics */}
         <div className={styles.stack}>
           <section
             className={`${styles.card} ${styles.progressCard}`}
             aria-label="Collection progress"
           >
-            <div
-              className={styles.ring}
-              style={{ '--ring-pct': `${ringPct}%` } as React.CSSProperties}
-            >
+            <div className={styles.ring}>
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#edf0e8" strokeWidth="9" />
+                <circle
+                  className={styles.progressArc}
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="#9fe870"
+                  strokeWidth="9"
+                  strokeLinecap="round"
+                  pathLength="100"
+                  strokeDasharray="100"
+                  strokeDashoffset={100 - ringPct}
+                  style={{ opacity: ringPct > 0 ? 1 : 0 }}
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
               <div>
                 <strong>{model.paid}</strong>
                 <span>
                   {model.target
                     ? `of ${model.target} ${model.group ? 'have paid' : 'spots'}`
-                    : 'people joined'}
+                    : 'people have paid'}
                 </span>
               </div>
             </div>
@@ -231,7 +268,7 @@ export function CollectionDashboard({
                 <dt>Collected</dt>
                 <dd>{money(model.total)}</dd>
               </div>
-              {model.target !== null && (
+              {(model.target !== null || collection.limitType === 'goal') && (
                 <div>
                   <dt>
                     {model.group
@@ -257,267 +294,207 @@ export function CollectionDashboard({
               </div>
             </dl>
           </section>
-
-          {/* Activity chart — non-group, lives in the metrics column */}
-          {!model.group && (
-            <section className={`${styles.card} ${styles.activity}`}>
-              <div>
-                <h3>Chipped in per day</h3>
-                <strong>{model.days[5]}</strong>
-                <p>
-                  chipped in today,
-                  <br />
-                  your best day so far.
-                </p>
-              </div>
-              <div
-                className={styles.bars}
-                aria-label={`Sample daily contributions: ${model.days.join(', ')}`}
-              >
-                {model.days.map((value, index) => (
-                  <div key={index}>
-                    <strong>{value}</strong>
-                    <span
-                      style={{ height: `${(value / Math.max(1, ...model.days)) * 72}px` }}
-                    />
-                    <small>
-                      {9 + index}
-                      <br />
-                      Nov
-                    </small>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Trip bill (group) / QR code (open) */}
-          {model.group ? (
-            <section className={styles.card}>
-              <p>Collected for this trip</p>
-              <h2 className={styles.collected}>{money(model.total)}</h2>
-              <p>Keep the group&apos;s payments organised in one place.</p>
-              <button
-                className={styles.dark}
-                onClick={() => noticeAction('Trip bill payment preview.')}
-              >
-                Pay the trip bill
-              </button>
-            </section>
-          ) : (
-            <section className={styles.card}>
-              <div className={styles.qrTeaser}>
-                <QRCode value={url || collection.id} size={74} fgColor="#163300" />
-                <div>
-                  <h3>Get more people in</h3>
-                  <p>Share the code on a poster or send the link again.</p>
-                </div>
-              </div>
-              <button
-                className={styles.dark}
-                disabled={!active}
-                onClick={() => setPanel('share')}
-              >
-                Share link & QR
-              </button>
-            </section>
-          )}
-
-          {/* Paid strip — group only, grouped with progress data */}
-          {model.group && (
-            <section className={`${styles.card} ${styles.paidStrip}`}>
-              <div className={styles.paidAvatars}>
-                {model.people
-                  .filter((person) => person.paid)
-                  .slice(0, 5)
-                  .map((person) => (
-                    <span key={person.id} className={styles.avatar}>
-                      {initials(person.name)}
-                    </span>
-                  ))}
-              </div>
-              <strong>{model.paid} people have already paid</strong>
-              <button
-                onClick={() => {
-                  setPeopleScope('paid');
-                  setSearch('');
-                  setPanel('people');
-                }}
-              >
-                See paid
-              </button>
-            </section>
-          )}
+          <section className={`${styles.card} ${styles.balanceCard}`}>
+            <p>Available balance</p>
+            <h2 className={styles.collected}>{money(model.available)}</h2>
+            <p>Kept apart for {collection.title}.</p>
+            {model.spent > 0 && <p>{money(model.spent)} already used in this demo.</p>}
+            <button
+              className={styles.dark}
+              disabled={!model.available}
+              onClick={() => setPanel('balance')}
+            >
+              Pay a bill or move money
+            </button>
+          </section>
         </div>
-
-        {/* CENTER — people & urgent items */}
         <div className={styles.stack}>
-          {/* Exception alert — most urgent, always at top of center column */}
-          {!collection.preferences.exceptionResolved && (
-            <section className={`${styles.card} ${styles.exceptionCard}`}>
-              <h3>
-                Needs a look <small>1</small>
-              </h3>
-              <div className={styles.exception}>
-                <strong>Related to this event?</strong>
-                <div>
-                  <b>{model.group ? 'Märt Hein' : 'Helen Lepp'}</b>
-                  <b>+ {money(collection.priceMinorUnits)}</b>
-                </div>
-                <p>13 Nov, &quot;{model.group ? 'Rome for Laura Kuusk' : 'party xx'}&quot;</p>
-              </div>
-              {model.group && (
-                <div className={styles.suggestedMatch}>
-                  <span className={styles.avatar}>LK</span>
-                  <div>
-                    <strong>Probably Laura Kuusk</strong>
-                    <p>Named in the reference, same amount</p>
-                  </div>
-                </div>
-              )}
-              <div className={styles.smallActions}>
-                <button className={styles.dark} onClick={() => void saveException()}>
-                  {model.group ? "It's Laura" : 'Yes, add Helen'}
-                </button>
-                <button onClick={() => void saveException()}>Not related</button>
-              </div>
-            </section>
-          )}
-
-          {/* People list */}
-          <section className={styles.card}>
+          <section className={`${styles.card} ${styles.peopleCard}`}>
             {model.group && (
               <div className={styles.missing}>
                 <span className={styles.warning}>!</span>
                 <div>
-                  <h3>Still missing</h3>
-                  <p>{model.missing} people haven&apos;t paid</p>
+                  <h3>{model.missing ? 'Still missing' : 'Everyone’s in'}</h3>
+                  <p>
+                    {model.missing} people haven’t paid
+                    {daysLeft !== null ? `, ${daysLeft} days left` : ''}
+                  </p>
                 </div>
                 <strong>{money(model.outstanding)}</strong>
               </div>
             )}
             <div className={styles.listHeader}>
-              <h3>{model.group ? 'Who still owes' : "Who's coming"}</h3>
+              <h3>{model.group ? 'Who still owes' : 'Who’s coming'}</h3>
               <label>
                 <span className={styles.srOnly}>Find a name</span>
                 <input
+                  type="search"
                   placeholder="Find a name"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </label>
             </div>
-            <div ref={peopleRef} className={`${styles.people} ${model.group ? styles.groupPeople : ''}`}>
+            <div
+              ref={peopleRef}
+              className={`${styles.people} ${model.group ? styles.groupPeople : ''}`}
+            >
               {visible.map((person) => (
                 <div key={person.id} className={styles.person}>
                   <span className={styles.avatar}>{initials(person.name)}</span>
                   <div>
                     <strong>{person.name}</strong>
                     <p>
-                      {model.group
-                        ? person.paid
-                          ? 'Paid · thank you!'
-                          : person.status
-                        : person.when}
+                      <span className={styles.mobileQuantity}>
+                        {!model.group
+                          ? `${person.quantity} ${person.quantity === 1 ? 'person' : 'people'} · `
+                          : ''}
+                      </span>
+                      {model.group ? person.status : person.when || person.status}
                     </p>
                   </div>
-                  {model.group && !person.paid ? (
-                    <button onClick={() => openReminders(person.id)}>Remind</button>
+                  {model.group ? (
+                    <button disabled={!active} onClick={() => openReminders(person.id)}>
+                      Remind
+                    </button>
                   ) : (
-                    !model.group && (
-                      <b>
+                    <>
+                      <b className={styles.desktopQuantity}>
                         {person.quantity} {person.quantity === 1 ? 'person' : 'people'}
                       </b>
-                    )
+                      <b className={styles.mobilePersonAmount}>
+                        {person.paid ? money(person.amountMinorUnits) : 'Pending'}
+                      </b>
+                    </>
                   )}
                 </div>
               ))}
             </div>
             {!visible.length && (
-              <p className={styles.noResults}>No names match your search.</p>
+              <p className={styles.noResults}>
+                {search
+                  ? 'No names match your search.'
+                  : model.group && model.paid === collection.expectedCount
+                    ? 'Everyone has paid. Thank you!'
+                    : model.group
+                      ? 'No roster is available for this older demo record.'
+                      : 'No contributions yet. Share your link to get started.'}
+              </p>
             )}
             <div className={styles.listFooter}>
               <span>
                 Showing {visible.length} of {filtered.length}{' '}
                 {model.group ? 'people' : 'payments'}
               </span>
-              <button
-                onClick={() => {
-                  setPeopleScope(model.group ? 'unpaid' : 'all');
-                  setPanel('people');
-                }}
-              >
+              <button onClick={() => showPeople(model.group ? 'unpaid' : 'all')}>
                 See all
               </button>
             </div>
           </section>
+          <section className={`${styles.card} ${styles.paidStrip}`}>
+            <div className={styles.paidAvatars}>
+              {paidPeople.slice(0, 5).map((person) => (
+                <span key={person.id} className={styles.avatar}>
+                  {initials(person.name)}
+                </span>
+              ))}
+            </div>
+            <strong>{model.paid} people have already paid</strong>
+            <button onClick={() => showPeople('paid')}>See all</button>
+          </section>
+          <section className={`${styles.card} ${styles.activity}`}>
+            <div>
+              <h3>Chipped in per day</h3>
+              <strong>{model.days[5]}</strong>
+              <p>people chipped in today</p>
+            </div>
+            <div
+              className={styles.bars}
+              aria-label={`Daily contributions: ${model.days.join(', ')}`}
+            >
+              {model.days.map((value, index) => (
+                <div key={model.dayDates[index]}>
+                  <strong>{value}</strong>
+                  <span style={{ height: `${(value / Math.max(1, ...model.days)) * 78}px` }} />
+                  <small>{shortDeadline(model.dayDates[index])}</small>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
-
-        {/* RIGHT — management & settings */}
         <div className={styles.stack}>
-          {model.group && (
+          {model.group ? (
             <section className={styles.card}>
               <div className={styles.cardTitle}>
-                <span className={styles.avatar}>
+                <span className={styles.avatar} aria-hidden="true">
                   <svg
-                    className={styles.bellIcon}
+                    width="25"
+                    height="25"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.8"
-                    aria-hidden="true"
                   >
                     <path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5l-2 3Zm5 3h4" />
                   </svg>
                 </span>
                 <div>
-                  <h3>
-                    Reminders are {collection.preferences.remindersEnabled ? 'on' : 'off'}
-                  </h3>
-                  <p>
-                    {collection.preferences.remindersEnabled
-                      ? 'Your automatic schedule is saved.'
-                      : 'Reminders are paused.'}
-                  </p>
+                  <h3>Reminders, ready to copy</h3>
+                  <p>Paste a message into your chat.</p>
                 </div>
               </div>
               <p className={styles.nextReminder}>
-                Next one
-                <br />
-                <strong>
-                  {nextReminder && active && model.missing
-                    ? `${shortDeadline(nextReminder)}, to ${model.missing} people`
-                    : 'No upcoming reminder'}
-                </strong>
+                Pick a message, edit it if needed, and send it in your own chat.
               </p>
-              <button onClick={() => openReminders()}>Manage reminders</button>
+              <button onClick={() => openReminders()}>Copy a reminder</button>
+            </section>
+          ) : (
+            <section className={styles.card}>
+              <h3>{active ? 'The link is open' : 'The link is closed'}</h3>
+              <p>
+                {collection.limitType === 'none'
+                  ? 'No limit on people.'
+                  : collection.limitType === 'goal'
+                    ? `Stop at ${money(collection.goalMinorUnits)}.`
+                    : `${model.paid} of ${collection.spotLimit} spots taken.`}
+              </p>
+              <button onClick={() => openManage()}>Manage link</button>
             </section>
           )}
-
-          {!model.group && collection.customQuestion && (
+          <section className={styles.card}>
+            <div className={styles.qrTeaser}>
+              <QRCode value={url || collection.id} size={74} fgColor="#163300" />
+              <div>
+                <h3>{model.group ? 'Share with your group' : 'Get more people in'}</h3>
+                <p>Send the link or share the QR code.</p>
+              </div>
+            </div>
+            <button className={styles.dark} disabled={!active} onClick={() => setPanel('share')}>
+              Share link & QR
+            </button>
+          </section>
+          {collection.customQuestion && (
             <section className={styles.card}>
               <p>You asked</p>
               <h3>{collection.customQuestion}</h3>
               <div className={styles.answerTrack}>
                 <span
                   style={{
-                    width: `${model.people.length ? (answers.length / model.people.length) * 100 : 0}%`,
+                    width: `${paidPeople.length ? (answers.length / paidPeople.length) * 100 : 0}%`,
                   }}
                 />
               </div>
               <p>
                 <strong>
-                  {answers.length} of {model.people.length}
+                  {answers.length} of {paidPeople.length}
                 </strong>{' '}
-                wrote something, {model.people.length - answers.length} skipped it
+                payments included an answer
               </p>
               <button onClick={() => setPanel('answers')}>See answers ›</button>
             </section>
           )}
-
           {!model.group && (
             <section className={`${styles.card} ${styles.cardTitle}`}>
-              <span className={styles.avatar}>JD</span>
               <div>
                 <h3>Co-hosts</h3>
                 <p>
@@ -526,31 +503,32 @@ export function CollectionDashboard({
                     : 'Only you so far'}
                 </p>
               </div>
-              <button className={styles.dark} onClick={() => openManage('cohosts')}>
+              <button onClick={() => openManage('cohosts')}>
                 {collection.preferences.cohosts.length ? 'Manage' : 'Add'}
               </button>
             </section>
           )}
         </div>
       </div>
-
-      {/* Secondary actions — download, preview — demoted below the main grid */}
-      <div className={styles.secondaryRow}>
-        <button className={styles.textAction} onClick={downloadList}>Export CSV</button>
-        {model.group && (
-          <button type="button" className={styles.textAction} onClick={() => setFinishPreview(true)}>
+      {model.group && (
+        <div className={styles.secondaryRow}>
+          <button className={styles.textAction} onClick={() => setFinishPreview(true)}>
             Preview collection close
           </button>
-        )}
-      </div>
-
+        </div>
+      )}
       <p className={styles.demoNote}>
-        Sample statistics and fictional activity blended in for display. Real demo payments
-        update the totals shown here.
+        Demo payments only. Delete removes this dashboard and its saved payment link.
       </p>
-
       <DeleteCollectionButton collectionId={collectionId} />
-
+      <nav className={styles.mobileDock} aria-label="Collection actions">
+        <button className={styles.primary} onClick={() => setPanel('share')}>
+          Share link
+        </button>
+        <button onClick={() => (model.group ? openReminders() : openManage())}>
+          {model.group ? 'Reminders' : 'Manage link'}
+        </button>
+      </nav>
       {panel === 'share' && (
         <DashboardShareDialog
           collection={collection}
@@ -585,6 +563,9 @@ export function CollectionDashboard({
       )}
       {panel === 'answers' && (
         <DashboardAnswersPanel collection={collection} onClose={() => setPanel(null)} />
+      )}
+      {panel === 'balance' && (
+        <DashboardBalancePanel collection={collection} onClose={() => setPanel(null)} />
       )}
       <p className={styles.notice} role="status">
         {notice}

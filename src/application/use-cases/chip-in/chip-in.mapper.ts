@@ -40,6 +40,7 @@ export function toChipInDashboardResponse(
     preferences: record.preferences,
     isActivated: record.isActivated,
     status: record.chipIn.isComplete() ? 'complete' : 'active',
+    payments: record.receipts.map(toPaymentReceiptResponse),
   };
 }
 
@@ -57,5 +58,8 @@ export function toPaymentReceiptResponse(receipt: PaymentReceipt): PaymentReceip
     rate: receipt.rate,
     method: receipt.method,
     status: receipt.status,
+    answer: receipt.answer,
+    createdAt: receipt.createdAt.getTime(),
+    paidAt: receipt.paidAt ? receipt.paidAt.getTime() : null,
   };
 }

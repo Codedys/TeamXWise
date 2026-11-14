@@ -55,7 +55,12 @@ export class InMemoryChipInRepository implements ChipInRepository {
   ): Promise<ChipInDashboardRecord | null> {
     const record = this.store.get(id.toString());
     if (!record || record.ownerToken !== ownerToken) return null;
-    return { chipIn: record.chipIn, preferences: record.preferences, isActivated: record.isActivated };
+    return {
+      chipIn: record.chipIn,
+      preferences: record.preferences,
+      isActivated: record.isActivated,
+      receipts: [...record.receipts],
+    };
   }
 
   async findManyActivatedByOwnerToken(ownerToken: string): Promise<ChipInDashboardRecord[]> {
@@ -65,6 +70,7 @@ export class InMemoryChipInRepository implements ChipInRepository {
         chipIn: record.chipIn,
         preferences: record.preferences,
         isActivated: record.isActivated,
+        receipts: [...record.receipts],
       }));
   }
 

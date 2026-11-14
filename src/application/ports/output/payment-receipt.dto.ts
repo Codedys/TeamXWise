@@ -12,4 +12,7 @@ export interface PaymentReceiptResponse {
   rate: number;
   method: 'instant' | 'bank';
   status: 'pending' | 'paid';
+  answer: string | null;
+  createdAt: number;
+  paidAt: number | null;
 }

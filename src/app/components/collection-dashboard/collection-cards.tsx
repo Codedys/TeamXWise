@@ -16,7 +16,8 @@ export function CollectionCards() {
     const refresh = () =>
       void listOwnerChipInsAction()
         .then((result) => {
-          if (active) setCollections(result);
+          // This card never shows the balance, so disbursements don't need merging in here.
+          if (active) setCollections(result.map((item) => ({ ...item, disbursements: [] })));
         })
         .catch(() => {});
     refresh();
@@ -31,7 +32,7 @@ export function CollectionCards() {
     <section className={styles.homeCollections} aria-labelledby="chip-in-collections-heading">
       <div className={styles.homeHeader}>
         <h2 id="chip-in-collections-heading">Your Chip ins</h2>
-        <span>Mock dashboards</span>
+        <span>Live demo data</span>
       </div>
       <div className={styles.homeGrid}>
         {collections.map((collection) => {
@@ -53,15 +54,14 @@ export function CollectionCards() {
                 {model.group ? 'paid' : 'people joined'}
               </span>
               <span className={styles.homeTrack}>
-                <span style={{ width: `${model.percentage ?? 100}%` }} />
+                <span style={{ width: `${model.percentage ?? 0}%` }} />
               </span>
               <small>
                 {collection.status === 'complete'
                   ? 'Complete'
                   : !collection.isOpen
                     ? 'Link paused'
-                    : 'View dashboard'}{' '}
-                · sample statistics
+                    : 'View dashboard'}
               </small>
             </Link>
           );

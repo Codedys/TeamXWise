@@ -1,12 +1,10 @@
 'use client';
 import Link from 'next/link';
+import { CurrencySelect } from '../currency-select/currency-select';
 import { useRef, useState, type FormEvent } from 'react';
 import { displayMoney, localDateInput } from '../create-collection/create-collection-draft';
 import { evaluateOpenCollection } from '../create-collection/open-collection-rules';
-import {
-  previewClosedReason,
-  previewRuleDraft,
-} from './chip-in-preview-rules';
+import { previewClosedReason, previewRuleDraft } from './chip-in-preview-rules';
 import type {
   ChipInParticipantViewModel,
   ChipInPreviewViewModel,
@@ -107,7 +105,36 @@ export function PaymentCheckout({
     }
   }
   return (
-    <form onSubmit={submit} noValidate className={styles.checkout}>
+    <form
+      onSubmit={submit}
+      noValidate
+      className={styles.checkout}
+      data-stage={detailsComplete ? 'payment' : 'details'}
+    >
+      {detailsComplete && (
+        <div className={styles.mobileCheckoutHeader}>
+          <button
+            type="button"
+            className={styles.mobileBack}
+            disabled={submitting}
+            aria-label={participant ? 'Choose another name' : 'Back to your details'}
+            onClick={() => (participant ? onBack() : setDetailsComplete(false))}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="m14 6-6 6 6 6" />
+            </svg>
+          </button>
+          <p>{collection.title}</p>
+        </div>
+      )}
       <h1 className={styles.heading}>
         {participant
           ? `Paying for ${participant.name}`
@@ -116,198 +143,198 @@ export function PaymentCheckout({
             : 'Your details'}
       </h1>
       <fieldset disabled={submitting}>
-        {!detailsComplete && (
-          <div className={styles.payerFields}>
-            <label>
-              Your name
-              <input
-                required
-                name="payerName"
-                maxLength={100}
-                value={name}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  changed();
-                }}
-                autoComplete="name"
-              />
-            </label>
-            {collection.collectEmail && (
+        <div className={styles.checkoutBody}>
+          {!detailsComplete && (
+            <div className={styles.payerFields}>
               <label>
-                Email for the receipt
+                Your name
                 <input
                   required
-                  name="email"
-                  type="email"
-                  value={email}
-                  maxLength={254}
+                  name="payerName"
+                  maxLength={100}
+                  value={name}
                   onChange={(event) => {
-                    setEmail(event.target.value);
+                    setName(event.target.value);
                     changed();
                   }}
-                  autoComplete="email"
+                  autoComplete="name"
                 />
               </label>
-            )}
-            <label className={styles.quantityControl}>
-              How many people?
-              <span>
-                <button
-                  type="button"
-                  aria-label="One fewer person"
-                  disabled={count <= 1}
-                  onClick={() => {
-                    setQuantity(String(Math.max(1, count - 1)));
-                    changed();
-                  }}
-                >
-                  −
-                </button>
-                <input
-                  name="quantity"
-                  aria-label="How many people?"
-                  type="number"
-                  min={1}
-                  max={capacity?.remainingSpots ?? 1_000_000}
-                  step={1}
-                  value={quantity}
-                  onChange={(event) => {
-                    setQuantity(event.target.value);
-                    changed();
-                  }}
-                />
-                <button
-                  type="button"
-                  aria-label="One more person"
-                  disabled={count >= (capacity?.remainingSpots ?? 1_000_000)}
-                  onClick={() => {
-                    setQuantity(String(count + 1));
-                    changed();
-                  }}
-                >
-                  +
-                </button>
-              </span>
-            </label>
-            {capacity?.remainingSpots !== null && capacity && (
-              <p className={styles.help}>
-                {capacity.remainingSpots}{' '}
-                {collection.limitType === 'goal'
-                  ? 'full-price contributions needed to reach the goal'
-                  : 'spots remaining'}
-                .
-              </p>
-            )}
-            {collection.customQuestion && (
-              <label>
-                {collection.customQuestion}
-                <textarea
-                  required
-                  name="answer"
-                  value={answer}
-                  maxLength={1000}
-                  onChange={(event) => {
-                    setAnswer(event.target.value);
-                    changed();
-                  }}
-                  rows={2}
-                />
-              </label>
-            )}
-          </div>
-        )}
-        {detailsComplete && (
-          <>
-            <div className={styles.quoteGrid}>
-              <div className={styles.amountCard}>
-                <strong>
-                  {displayMoney(
-                    collection.priceMinorUnits *
-                      (Number.isSafeInteger(count) && count > 0 ? count : 1),
-                    collection.currency,
-                  )}
-                </strong>
-                <span>{count > 1 ? `${count} people · ` : ''}Collection amount</span>
-              </div>
-              <div className={styles.quoteCard}>
-                <div>
-                  <span>{collection.ownerName} gets</span>
-                  <strong>
-                    {displayMoney(
-                      quote ? quote.sourceMinorUnits : collection.priceMinorUnits,
-                      collection.currency,
-                    )}
-                  </strong>
-                </div>
-                <div>
-                  <label htmlFor="payer-currency">You pay</label>
-                  <select
-                    id="payer-currency"
-                    value={currency}
+              {collection.collectEmail && (
+                <label>
+                  Email for the receipt
+                  <input
+                    required
+                    name="email"
+                    type="email"
+                    value={email}
+                    maxLength={254}
                     onChange={(event) => {
-                      setCurrency(event.target.value as 'EUR' | 'GBP' | 'USD');
+                      setEmail(event.target.value);
+                      changed();
+                    }}
+                    autoComplete="email"
+                  />
+                </label>
+              )}
+              <label className={styles.quantityControl}>
+                How many people?
+                <span>
+                  <button
+                    type="button"
+                    aria-label="One fewer person"
+                    disabled={count <= 1}
+                    onClick={() => {
+                      setQuantity(String(Math.max(1, count - 1)));
                       changed();
                     }}
                   >
-                    <option>EUR</option>
-                    <option>GBP</option>
-                    <option>USD</option>
-                  </select>
-                  <strong>{quote ? displayMoney(quote.payMinorUnits, currency) : '…'}</strong>
-                </div>
-                <p>
-                  {quote
-                    ? `Demo rate: 1 ${collection.currency} = ${quote.rate.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} ${currency}.`
-                    : 'Preparing quote…'}{' '}
-                  Rates and fees are illustrative.
+                    −
+                  </button>
+                  <input
+                    name="quantity"
+                    aria-label="How many people?"
+                    type="number"
+                    min={1}
+                    max={capacity?.remainingSpots ?? 1_000_000}
+                    step={1}
+                    value={quantity}
+                    onChange={(event) => {
+                      setQuantity(event.target.value);
+                      changed();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    aria-label="One more person"
+                    disabled={count >= (capacity?.remainingSpots ?? 1_000_000)}
+                    onClick={() => {
+                      setQuantity(String(count + 1));
+                      changed();
+                    }}
+                  >
+                    +
+                  </button>
+                </span>
+              </label>
+              {capacity?.remainingSpots !== null && capacity && (
+                <p className={styles.help}>
+                  {capacity.remainingSpots}{' '}
+                  {collection.limitType === 'goal'
+                    ? 'full-price contributions needed to reach the goal'
+                    : 'spots remaining'}
+                  .
                 </p>
+              )}
+              {collection.customQuestion && (
+                <label>
+                  {collection.customQuestion}
+                  <textarea
+                    required
+                    name="answer"
+                    value={answer}
+                    maxLength={1000}
+                    onChange={(event) => {
+                      setAnswer(event.target.value);
+                      changed();
+                    }}
+                    rows={2}
+                  />
+                </label>
+              )}
+            </div>
+          )}
+          {detailsComplete && (
+            <>
+              <div className={styles.quoteGrid}>
+                <div className={styles.amountCard}>
+                  <strong>
+                    {displayMoney(
+                      collection.priceMinorUnits *
+                        (Number.isSafeInteger(count) && count > 0 ? count : 1),
+                      collection.currency,
+                    )}
+                  </strong>
+                  <span>{count > 1 ? `${count} people · ` : ''}Collection amount</span>
+                </div>
+                <div className={styles.quoteCard}>
+                  <div>
+                    <span>{collection.ownerName} gets</span>
+                    <strong>
+                      {displayMoney(
+                        quote ? quote.sourceMinorUnits : collection.priceMinorUnits,
+                        collection.currency,
+                      )}
+                    </strong>
+                  </div>
+                  <div>
+                    <label htmlFor="payer-currency">You pay</label>
+                    <CurrencySelect
+                      id="payer-currency"
+                      label="Payment currency"
+                      value={currency}
+                      disabled={submitting}
+                      onChange={(value) => {
+                        setCurrency(value);
+                        changed();
+                      }}
+                    />
+                    <strong>{quote ? displayMoney(quote.payMinorUnits, currency) : '…'}</strong>
+                  </div>
+                  <p>
+                    {quote
+                      ? `Demo rate: 1 ${collection.currency} = ${quote.rate.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} ${currency}.`
+                      : 'Preparing quote…'}{' '}
+                    Rates and fees are illustrative.
+                  </p>
+                </div>
               </div>
-            </div>
-            <p className={styles.infoStrip}>
-              This payment is for {collection.title}. No app or account is needed.
+              <p className={styles.infoStrip}>
+                This payment is for {collection.title}. No app or account is needed.
+              </p>
+              <div className={styles.methodChoices} aria-label="Demo payment method">
+                <button
+                  type="button"
+                  aria-pressed={method === 'instant'}
+                  onClick={() => {
+                    setMethod('instant');
+                    changed();
+                  }}
+                >
+                  Card or wallet demo
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={method === 'bank'}
+                  onClick={() => {
+                    setMethod('bank');
+                    changed();
+                  }}
+                >
+                  Bank transfer demo
+                </button>
+              </div>
+              <p className={styles.demoNote}>
+                Simulation only. No payment details are requested and no money moves.
+              </p>
+            </>
+          )}
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
             </p>
-            <div className={styles.methodChoices} aria-label="Demo payment method">
-              <button
-                type="button"
-                aria-pressed={method === 'instant'}
-                onClick={() => {
-                  setMethod('instant');
-                  changed();
-                }}
-              >
-                Card or wallet demo
-              </button>
-              <button
-                type="button"
-                aria-pressed={method === 'bank'}
-                onClick={() => {
-                  setMethod('bank');
-                  changed();
-                }}
-              >
-                Bank transfer demo
-              </button>
-            </div>
-            <p className={styles.demoNote}>
-              Simulation only. No payment details are requested and no money moves.
+          )}
+          {unavailable && (
+            <p className={styles.error} role="alert">
+              {closed ??
+                (participant?.status === 'paid'
+                  ? 'This person has already paid.'
+                  : participant?.status === 'pending'
+                    ? 'A transfer is pending for this person.'
+                    : 'Choose a quantity within the remaining capacity.')}
             </p>
-          </>
-        )}
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-        {unavailable && (
-          <p className={styles.error} role="alert">
-            {closed ??
-              (participant?.status === 'paid'
-                ? 'This person has already paid.'
-                : participant?.status === 'pending'
-                  ? 'A transfer is pending for this person.'
-                  : 'Choose a quantity within the remaining capacity.')}
-          </p>
-        )}
+          )}
+        </div>
         <div className={styles.actions}>
           {participant ? (
             <button type="button" className={styles.secondary} onClick={onBack}>
@@ -339,6 +366,19 @@ export function PaymentCheckout({
                   ? 'Preview bank transfer'
                   : `Demo pay ${quote ? displayMoney(quote.payMinorUnits, currency) : ''}`}
           </button>
+          {detailsComplete && (
+            <button
+              type="button"
+              className={styles.mobileBank}
+              aria-pressed={method === 'bank'}
+              onClick={() => {
+                setMethod(method === 'bank' ? 'instant' : 'bank');
+                changed();
+              }}
+            >
+              {method === 'bank' ? 'Use card or wallet instead' : 'Pay by bank transfer instead'}
+            </button>
+          )}
         </div>
       </fieldset>
     </form>

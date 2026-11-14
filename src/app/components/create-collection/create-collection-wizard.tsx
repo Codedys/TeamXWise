@@ -1,5 +1,7 @@
 'use client';
 
+import { WiseCheck } from '../icons/wise-check';
+
 import Link from 'next/link';
 import { activateChipInDashboardAction } from '@/app/actions';
 import { CollectionSharePanel } from '../collection-sharing/collection-share-panel';
@@ -63,7 +65,7 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
     !openCollection && draft.step === COLLECTION_STEP.names && draft.namesStage === 'edit';
   const namesInvalid = !!Object.keys(validateDraftStep(COLLECTION_STEP.names, draft)).length;
   const heading = sharing
-    ? 'Share your collection preview'
+    ? 'Your link is ready'
     : editingNames
       ? 'Here’s your list'
       : currentStep.heading;
@@ -357,9 +359,7 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
         ? 'Review'
         : 'Tidy my list'
       : draft.step === COLLECTION_STEP.review
-        ? openCollection
-          ? 'Get my link'
-          : 'Send it out'
+        ? 'Get my link'
         : 'Continue';
 
   function cancelSetup() {
@@ -396,126 +396,187 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
 
   return (
     <MotionConfig reducedMotion="user">
-    <main className={`${styles.screen} ${className}`}>
-      <div className={styles.wizard}>
-        <aside className={styles.sidebar} aria-label="Collection setup progress">
-          <Link href="/chip-in" className={styles.brand} aria-label="Back to Chip in">
-            CHIP IN
-          </Link>
-          <ol className={styles.steps}>
-            {steps.map((step, index) => (
-              <li key={step.id}>
+      <main className={`${styles.screen} ${className}`}>
+        <div className={styles.wizard}>
+          <aside className={styles.sidebar} aria-label="Collection setup progress">
+            <Link href="/chip-in" className={styles.brand} aria-label="Back to Chip in">
+              CHIP IN
+            </Link>
+            <ol className={styles.steps}>
+              {steps.map((step, index) => (
+                <li key={step.id}>
+                  <button
+                    type="button"
+                    className={`${styles.stepButton} ${step.id === draft.step ? styles.activeStep : ''} ${step.id < draft.step ? styles.completedStep : ''}`}
+                    onClick={() => visitStep(step.id)}
+                    disabled={
+                      step.id > draft.maxStep ||
+                      (step.id >= COLLECTION_STEP.review && namesInvalid)
+                    }
+                    aria-label={`${index + 1}. ${step.label}${step.id < draft.step && stepSummaries[step.id] ? `: ${stepSummaries[step.id]}` : ''}`}
+                    aria-current={step.id === draft.step ? 'step' : undefined}
+                  >
+                    <span className={styles.stepNumber}>
+                      {step.id < draft.step ? <WiseCheck /> : index + 1}
+                    </span>
+                    <span className={styles.stepCopy}>
+                      <span>{step.label}</span>
+                      {step.id < draft.step && stepSummaries[step.id] && (
+                        <small>{stepSummaries[step.id]}</small>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <p className={styles.concept}>
+              Concept, built at Wise Hackathon
+              <br />
+              2026
+            </p>
+          </aside>
+          <form
+            ref={formRef}
+            className={`${styles.form} ${sharing ? styles.shareForm : ''}`}
+            onSubmit={continueForm}
+            noValidate
+          >
+            <nav className={styles.mobileHeader} aria-label="Collection setup progress">
+              {draft.step === 0 ? (
+                <Link
+                  className={styles.mobileBack}
+                  href="/chip-in"
+                  aria-label="Back to Chip in"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m14 6-6 6 6 6" />
+                  </svg>
+                </Link>
+              ) : (
                 <button
                   type="button"
-                  className={`${styles.stepButton} ${step.id === draft.step ? styles.activeStep : ''} ${step.id < draft.step ? styles.completedStep : ''}`}
-                  onClick={() => visitStep(step.id)}
-                  disabled={
-                    step.id > draft.maxStep ||
-                    (step.id >= COLLECTION_STEP.review && namesInvalid)
-                  }
-                  aria-label={`${index + 1}. ${step.label}${step.id < draft.step && stepSummaries[step.id] ? `: ${stepSummaries[step.id]}` : ''}`}
-                  aria-current={step.id === draft.step ? 'step' : undefined}
+                  className={styles.mobileBack}
+                  onClick={goBack}
+                  aria-label="Previous step"
                 >
-                  <span className={styles.stepNumber}>
-                    {step.id < draft.step ? '✓' : index + 1}
-                  </span>
-                  <span className={styles.stepCopy}>
-                    <span>{step.label}</span>
-                    {step.id < draft.step && stepSummaries[step.id] && (
-                      <small>{stepSummaries[step.id]}</small>
-                    )}
-                  </span>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m14 6-6 6 6 6" />
+                  </svg>
                 </button>
-              </li>
-            ))}
-          </ol>
-          <p className={styles.concept}>
-            Concept, built at Wise Hackathon
-            <br />
-            2026
-          </p>
-        </aside>
-        <form ref={formRef} className={styles.form} onSubmit={continueForm} noValidate>
-          <div className={styles.formContent}>
-            <div className={styles.stepHeader}>
-              <p className={styles.stepCount}>
-                {sharing ? 'Share preview' : `Step ${stepIndex + 1} of ${steps.length}`}
-              </p>
-              <button type="button" className={styles.cancelButton} onClick={cancelSetup}>
-                Cancel
-              </button>
-            </div>
-            <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
-              <motion.div
-                key={draft.step}
-                custom={stepDirection}
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>
-                  {heading}
-                </h1>
-                {renderStep()}
-                {cancelError && (
-                  <p className={styles.error} role="alert">
-                    {cancelError}
-                  </p>
-                )}
-                {errors.names && draft.step !== COLLECTION_STEP.names && (
-                  <p className={styles.error} role="alert">
-                    {errors.names}
-                  </p>
-                )}
-                {storageUnavailable && (
-                  <p className={styles.help} role="status">
-                    Browser storage is unavailable. Your draft will only last for this visit.
-                  </p>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-          <div className={styles.actions}>
-            {draft.step === 0 ? (
-              <Link className={styles.backButton} href="/chip-in">
-                Back
-              </Link>
-            ) : (
-              <button type="button" className={styles.backButton} onClick={goBack}>
-                Back
-              </button>
-            )}
-            {!sharing ? (
-              <button
-                className={styles.continueButton}
-                type="submit"
-                disabled={editingNames && namesInvalid}
-                aria-describedby={editingNames ? 'names-count' : undefined}
-              >
-                {continueLabel}
-              </button>
-            ) : (
+              )}
+              <div className={styles.mobileSegments} aria-hidden="true">
+                {steps.map((step) => (
+                  <span key={step.id} data-complete={sharing || step.id <= draft.step} />
+                ))}
+              </div>
+              <span className={styles.mobileCount}>
+                {sharing ? 'Share' : `${stepIndex + 1} of ${steps.length}`}
+              </span>
               <button
                 type="button"
-                className={styles.continueButton}
-                disabled={!publishedId}
-                onClick={() => {
-                  if (!publishedId) return;
-                  void activateChipInDashboardAction(publishedId).finally(() => {
-                    resetCollectionDraft();
-                    router.push('/');
-                  });
-                }}
+                className={styles.mobileCancel}
+                onClick={cancelSetup}
+                aria-label="Cancel collection setup"
               >
-                Done
+                ×
               </button>
-            )}
-          </div>
-        </form>
-      </div>
-    </main>
+            </nav>
+            <div className={styles.formContent}>
+              <div className={styles.stepHeader}>
+                <p className={styles.stepCount}>
+                  {sharing ? 'Share preview' : `Step ${stepIndex + 1} of ${steps.length}`}
+                </p>
+                <button type="button" className={styles.cancelButton} onClick={cancelSetup}>
+                  Cancel
+                </button>
+              </div>
+              <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
+                <motion.div
+                  key={draft.step}
+                  custom={stepDirection}
+                  variants={stepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>
+                    {heading}
+                  </h1>
+                  {renderStep()}
+                  {cancelError && (
+                    <p className={styles.error} role="alert">
+                      {cancelError}
+                    </p>
+                  )}
+                  {errors.names && draft.step !== COLLECTION_STEP.names && (
+                    <p className={styles.error} role="alert">
+                      {errors.names}
+                    </p>
+                  )}
+                  {storageUnavailable && (
+                    <p className={styles.help} role="status">
+                      Browser storage is unavailable. Your draft will only last for this visit.
+                    </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <div className={styles.actions}>
+              {draft.step === 0 ? (
+                <Link className={styles.backButton} href="/chip-in">
+                  Back
+                </Link>
+              ) : (
+                <button type="button" className={styles.backButton} onClick={goBack}>
+                  Back
+                </button>
+              )}
+              {!sharing ? (
+                <button
+                  className={styles.continueButton}
+                  type="submit"
+                  disabled={editingNames && namesInvalid}
+                  aria-describedby={editingNames ? 'names-count' : undefined}
+                >
+                  {continueLabel}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.continueButton}
+                  disabled={!publishedId}
+                  onClick={() => {
+                    if (!publishedId) return;
+                    void activateChipInDashboardAction(publishedId).finally(() => {
+                      resetCollectionDraft();
+                      router.push('/');
+                    });
+                  }}
+                >
+                  View dashboard
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </main>
     </MotionConfig>
   );
 }

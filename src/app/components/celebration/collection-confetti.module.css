@@ -1,0 +1,64 @@
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.confetti span {
+  position: absolute;
+  top: 86%;
+  width: 10px;
+  height: 19px;
+  border-radius: 3px;
+  opacity: 0;
+  will-change: transform;
+  animation: burst var(--duration) cubic-bezier(0.16, 0.7, 0.35, 1) var(--delay) both;
+}
+.confetti span:nth-child(3n) {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+@keyframes burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.35) rotate(0deg);
+  }
+  6% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 1;
+    transform: translate3d(calc(var(--travel) * 0.65), var(--rise), 0) scale(1)
+      rotate(calc(var(--rotation) * 0.5));
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--travel), 28vh, 0) scale(0.8) rotate(var(--rotation));
+  }
+}
+.bounce {
+  animation: bounce 2.4s ease-in-out infinite;
+}
+@keyframes bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+  .confetti span,
+  .bounce {
+    animation: none;
+  }
+}

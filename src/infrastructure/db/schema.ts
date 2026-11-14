@@ -69,6 +69,9 @@ export const chipInPaymentsTable = pgTable(
     rate: doublePrecision('rate').notNull(),
     method: text('method').notNull(),
     status: text('status').notNull(),
+    answer: text('answer'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
   },
   (table) => [
     // Idempotency: a retried/double-tapped submission must never be counted twice.

@@ -66,6 +66,7 @@ function baseSubmitRequest(overrides: Partial<Parameters<SubmitPaymentInteractor
     email: '',
     answer: '',
     today: '2026-01-01',
+    now: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides,
   };
 }

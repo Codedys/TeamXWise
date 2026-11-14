@@ -7,6 +7,8 @@ export interface ChipInDashboardRecord {
   chipIn: ChipIn;
   preferences: DashboardPreferencesDto;
   isActivated: boolean;
+  /** The owner sees every payer's own receipt — names, answers, quantities. */
+  receipts: PaymentReceipt[];
 }
 
 /** Gateway interface — implemented by adapters/gateways, never imported from there. */

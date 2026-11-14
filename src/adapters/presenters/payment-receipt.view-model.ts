@@ -13,6 +13,9 @@ export interface PaymentReceiptViewModel {
   rate: number;
   method: 'instant' | 'bank';
   status: 'pending' | 'paid';
+  answer: string | null;
+  createdAt: number;
+  paidAt: number | null;
 }
 
 export function toPaymentReceiptViewModel(response: PaymentReceiptResponse): PaymentReceiptViewModel {

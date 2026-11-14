@@ -1,11 +1,10 @@
 import type { ChipInDashboardResponse } from '@/application/ports/output/chip-in-dashboard.dto';
+import { toPaymentReceiptViewModel, type PaymentReceiptViewModel } from './payment-receipt.view-model';
+import type { ChipInParticipantViewModel } from './chip-in-preview.view-model';
 
 export interface DashboardPreferencesViewModel {
-  remindersEnabled: boolean;
-  rules: { id: 'week' | 'day' | 'due'; enabled: boolean; message: string }[];
-  contacts: Record<string, string>;
+  rules: { id: 'week' | 'day' | 'due'; message: string }[];
   cohosts: string[];
-  exceptionResolved: boolean;
   completionDismissed: boolean;
 }
 
@@ -14,8 +13,8 @@ export interface ChipInDashboardViewModel {
   id: string;
   title: string;
   isOpen: boolean;
-  samplePaidCount: number | null;
-  statisticsPriceMinorUnits: number | null;
+  participants: ChipInParticipantViewModel[];
+  payments: PaymentReceiptViewModel[];
   preferences: DashboardPreferencesViewModel;
   invitationMessage: string | null;
   audience: 'group' | 'anyone';
@@ -39,10 +38,8 @@ export function toChipInDashboardViewModel(
     id: response.id,
     title: response.title,
     isOpen: response.isOpen,
-    // Fixture-blending for display richness recomputes from current fields every time —
-    // see collection-dashboard-model.ts — so these are never persisted.
-    samplePaidCount: null,
-    statisticsPriceMinorUnits: null,
+    participants: response.participants,
+    payments: response.payments.map(toPaymentReceiptViewModel),
     preferences: response.preferences,
     invitationMessage: response.invitationMessage,
     audience: response.audience,

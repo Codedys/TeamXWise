@@ -22,6 +22,13 @@
       "when": 1794650965333,
       "tag": "0002_clean_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794654127959,
+      "tag": "0003_romantic_bucky",
+      "breakpoints": true
     }
   ]
 }

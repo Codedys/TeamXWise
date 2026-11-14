@@ -114,37 +114,39 @@ export function CollectionSharePanel({
       <div className={styles.layout}>
         <div className={styles.linkPanel}>
           <label htmlFor="collection-preview-link">Payment link</label>
-          <input
-            ref={inputRef}
-            id="collection-preview-link"
-            value={url}
-            readOnly
-            onFocus={(event) => event.target.select()}
-          />
-          <div className={styles.buttons}>
+          <div className={styles.linkRow}>
+            <input
+              ref={inputRef}
+              id="collection-preview-link"
+              value={url}
+              readOnly
+              onFocus={(event) => event.target.select()}
+            />
             <button type="button" onClick={() => void copy(url, 'Payment link')}>
               Copy link
+            </button>
+          </div>
+          <div className={styles.buttons}>
+            <button
+              type="button"
+              onClick={() =>
+                void shareCollectionLink(
+                  collection.title,
+                  url,
+                  collection.invitationMessage ?? undefined,
+                ).then(setMessage)
+              }
+            >
+              Share link
             </button>
             <Link href={url} target="_blank" rel="noreferrer">
               Open payer page ↗
             </Link>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              void shareCollectionLink(
-                collection.title,
-                url,
-                collection.invitationMessage ?? undefined,
-              ).then(setMessage)
-            }
-          >
-            Share link
-          </button>
-          <div className={styles.invitation}>
-            <strong>Your invitation</strong>
+          <details className={styles.invitation}>
+            <summary>View your invitation</summary>
             <p>{collection.invitationMessage?.replaceAll('[link]', url)}</p>
-          </div>
+          </details>
           <p className={styles.progress}>
             {collection.progress.paidSpots}{' '}
             {collection.progress.paidSpots === 1 ? 'person' : 'people'} chipped in
@@ -170,7 +172,7 @@ export function CollectionSharePanel({
           >
             Share QR code
           </button>
-          <p>The receiving device must be able to reach this address.</p>
+          <p>Scan to open the same link from any device.</p>
         </div>
       </div>
       <p className={styles.status} role="status">

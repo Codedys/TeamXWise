@@ -28,6 +28,7 @@ export class ConfirmBankTransferController {
       chipInId: parsed.data.chipInId,
       receiptId: parsed.data.receiptId,
       today: new Date().toISOString().slice(0, 10),
+      now: new Date(),
     });
 
     return this.presenter.viewModel as ConfirmBankTransferViewModel;

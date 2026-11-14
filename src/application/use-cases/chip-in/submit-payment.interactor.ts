@@ -30,6 +30,7 @@ export class SubmitPaymentInteractor implements SubmitPaymentInputPort {
           answer: request.answer,
           expectedSourceMinorUnits: request.expectedSourceMinorUnits,
           today: request.today,
+          now: request.now,
         }),
       );
       this.outputPort.presentSuccess(toPaymentReceiptResponse(receipt));

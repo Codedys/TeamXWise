@@ -14,6 +14,9 @@ export interface PaymentReceiptProps {
   rate: number;
   method: PaymentMethod;
   status: PaymentStatus;
+  answer: string | null;
+  createdAt: Date;
+  paidAt: Date | null;
 }
 
 /** A single contribution attempt against a Chip-In — the unit the payer sees as a receipt. */
@@ -64,7 +67,20 @@ export class PaymentReceipt {
     return this.props.status;
   }
 
-  withStatus(status: PaymentStatus): PaymentReceipt {
-    return new PaymentReceipt({ ...this.props, status });
+  get answer(): string | null {
+    return this.props.answer;
+  }
+
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+
+  get paidAt(): Date | null {
+    return this.props.paidAt;
+  }
+
+  /** The only place `paidAt` is ever set — mirrors the single `markPaid` moment. */
+  markPaid(now: Date): PaymentReceipt {
+    return new PaymentReceipt({ ...this.props, status: 'paid', paidAt: now });
   }
 }

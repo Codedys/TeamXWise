@@ -1,12 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import {
-  calendarMonth,
-  dateFromInput,
-  daysUntilDate,
-  shortDeadline,
-} from './calendar-date';
+import { WiseCheck } from '../icons/wise-check';
+import { calendarMonth, dateFromInput, daysUntilDate, shortDeadline } from './calendar-date';
 import { localDateInput } from './create-collection-draft';
 import styles from './create-collection-wizard.module.css';
 
@@ -55,9 +51,7 @@ export function DeadlineCalendar({
     if (iso < today) return;
     setMonth({ year: next.getFullYear(), index: next.getMonth() });
     requestAnimationFrame(() =>
-      calendarRef.current
-        ?.querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)
-        ?.focus(),
+      calendarRef.current?.querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)?.focus(),
     );
   }
 
@@ -70,8 +64,7 @@ export function DeadlineCalendar({
               type="button"
               aria-label="Previous month"
               disabled={
-                new Date(month.year, month.index, 0, 12) <
-                (dateFromInput(today) ?? new Date())
+                new Date(month.year, month.index, 0, 12) < (dateFromInput(today) ?? new Date())
               }
               onClick={() => moveMonth(-1)}
             >
@@ -159,6 +152,9 @@ export function DeadlineCalendar({
               checked={noDeadline}
               onChange={(event) => onNoDeadlineChange(event.target.checked)}
             />
+            <span className={styles.checkboxMark} aria-hidden="true">
+              {noDeadline && <WiseCheck size={16} />}
+            </span>
             <span>{mode === 'closes' ? 'No closing date' : 'No deadline'}</span>
           </label>
         </div>

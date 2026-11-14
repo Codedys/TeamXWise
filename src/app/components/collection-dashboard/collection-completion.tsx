@@ -1,7 +1,10 @@
 'use client';
 import Image from 'next/image';
+import { CollectionConfetti } from '../celebration/collection-confetti';
+import celebration from '../celebration/collection-confetti.module.css';
+import { DashboardBalancePanel } from './dashboard-balance-panel';
 import Link from 'next/link';
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import type { CollectionDashboard } from './collection-dashboard-client';
 import { dashboardModel, initials } from './collection-dashboard-model';
 import { displayMoney } from '../create-collection/create-collection-draft';
@@ -18,7 +21,7 @@ export function CollectionCompletion({
   onKeep: () => void;
 }) {
   const model = dashboardModel(collection);
-  const [status, setStatus] = useState('');
+  const [balanceOpen, setBalanceOpen] = useState(false);
   const count = preview ? (model.target ?? model.paid) : model.paid;
   const total = preview ? model.total + model.outstanding : model.total;
   return (
@@ -28,24 +31,9 @@ export function CollectionCompletion({
           <Link href="/">← Back to account</Link>
           <span>{preview ? 'COMPLETION PREVIEW' : 'DEMO COLLECTION COMPLETE'}</span>
         </div>
-        <div className={styles.confetti} aria-hidden="true">
-          {Array.from({ length: 50 }, (_, index) => (
-            <span
-              key={index}
-              style={
-                {
-                  left: `${(index * 37 + 5) % 100}%`,
-                  top: `${(index * 23 + 7) % 100}%`,
-                  background: ['#fff', '#ffce32', '#ff643a', '#163300'][index % 4],
-                  transform: `rotate(${index * 47}deg)`,
-                  '--delay': `${-(index % 9)}s`,
-                } as CSSProperties
-              }
-            />
-          ))}
-        </div>
+        <CollectionConfetti />
         <div className={styles.content}>
-          <div className={styles.artwork}>
+          <div className={`${styles.artwork} ${celebration.bounce}`}>
             <Image
               src="/images/chip-in-filled-jar.png"
               width={1102}
@@ -85,20 +73,24 @@ export function CollectionCompletion({
             <div className={styles.actions}>
               <button
                 type="button"
-                onClick={() => setStatus('Bill-payment preview only. No money moved.')}
+                disabled={preview || model.available === 0}
+                onClick={() => setBalanceOpen(true)}
               >
-                Pay the trip bill
+                Pay a bill
               </button>
               <button type="button" className={styles.keep} onClick={onKeep}>
                 Keep it for now · View dashboard
               </button>
             </div>
             <p className={styles.status} role="status">
-              {status}
+              {preview ? 'Finish the collection to use the saved balance.' : ''}
             </p>
           </div>
         </div>
       </section>
+      {balanceOpen && (
+        <DashboardBalancePanel collection={collection} onClose={() => setBalanceOpen(false)} />
+      )}
       <DeleteCollectionButton collectionId={collection.id} />
     </div>
   );

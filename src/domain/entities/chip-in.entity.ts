@@ -59,6 +59,7 @@ interface AcceptPaymentInput {
   answer: string;
   expectedSourceMinorUnits?: number;
   today: string;
+  now: Date;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -339,6 +340,9 @@ export class ChipIn {
       rate: quote.rate,
       method: input.method,
       status,
+      answer: this.props.customQuestion ? input.answer.trim() : null,
+      createdAt: input.now,
+      paidAt: status === 'paid' ? input.now : null,
     });
     if (status === 'paid') {
       return { chipIn: this.withPaymentApplied(participant, quote.sourceMinorUnits, input.quantity), receipt };
@@ -352,7 +356,11 @@ export class ChipIn {
   }
 
   /** Confirms a pending bank-transfer receipt. Re-checks capacity: a pending transfer never reserved a spot. */
-  confirmPendingPayment(receipt: PaymentReceipt, today: string): { chipIn: ChipIn; receipt: PaymentReceipt } {
+  confirmPendingPayment(
+    receipt: PaymentReceipt,
+    today: string,
+    now: Date,
+  ): { chipIn: ChipIn; receipt: PaymentReceipt } {
     if (receipt.status === 'paid') return { chipIn: this, receipt };
     const reason = this.closeReason(today);
     if (reason === 'spots' || reason === 'goal') throw new ChipInCapacityExceededError(reason);
@@ -366,7 +374,7 @@ export class ChipIn {
       : null;
     return {
       chipIn: this.withPaymentApplied(participant, receipt.sourceAmount.minorUnits, receipt.quantity),
-      receipt: receipt.withStatus('paid'),
+      receipt: receipt.markPaid(now),
     };
   }
 }

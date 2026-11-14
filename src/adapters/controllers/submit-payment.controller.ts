@@ -49,6 +49,7 @@ export class SubmitPaymentController {
       answer: parsed.data.answer,
       expectedSourceMinorUnits: parsed.data.expectedSourceMinorUnits,
       today: new Date().toISOString().slice(0, 10),
+      now: new Date(),
     });
 
     return this.presenter.viewModel as SubmitPaymentViewModel;
