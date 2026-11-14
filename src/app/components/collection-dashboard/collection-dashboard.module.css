@@ -1,18 +1,46 @@
+/* Hallmark · deslop pass · app:dashboard · brand: Wise Collect · ground: Forest · 2026-11-14 */
+/* critique: white-on-off-white ground, grey-fill pills, 10–11 px labels, 30+ literal colours, pastel-red danger zone */
+/* waive: 999px pill-radius — Wise brand language, used consistently across chip-in, wizard, and payment screens */
+
 @property --ring-pct {
   syntax: '<percentage>';
   inherits: false;
   initial-value: 0%;
 }
 
+/* ── Tokens ────────────────────────────────────────────── */
 .screen {
-  --forest: #163300;
-  --lime: #9fe870;
+  /* — surfaces on Forest ground */
+  --bg-card:          #ffffff;
+  --bg-raised:        #f6f7f3;
+  --bg-sunken:        #f0f2ed;
+  --bd-subtle:        #dde1d6;
+  --bd-muted:         #c4cbbf;
+  /* — text in cards (on white) */
+  --tx-primary:       #0e0f0c;
+  --tx-secondary:     #52574e;
+  --tx-tertiary:      #818878;
+  /* — text on Forest ground */
+  --tx-ground:        #ffffff;
+  --tx-ground-muted:  rgba(226, 246, 213, 0.72);
+  --tx-ground-faint:  rgba(255, 255, 255, 0.35);
+  /* — status (no red/amber/yellow — brand language only) */
+  --st-warn-bg:       rgba(226, 246, 213, 0.12); /* mint-tint for subtle exception bg */
+  --st-warn-bd:       rgba(159, 232, 112, 0.3);  /* lime ring for exception border */
+  /* — chart */
+  --ch-bar:           #4a7034;
+  --ch-track:         #edf0e8;
+  /* — misc */
+  --mint:             #e2f6d5;
+
   min-height: 100svh;
-  background: #f6f6ef;
-  color: var(--forest);
   padding: 26px clamp(20px, 3vw, 48px) 40px;
+  background: var(--forest, #163300);
+  color: var(--tx-ground);
   color-scheme: light;
   line-height: 1.4;
+  font-family: var(--font-ui, "Inter", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
 }
 .screen *,
 .homeCollections * {
@@ -22,30 +50,38 @@
 .screen input {
   font: inherit;
 }
+
+/* Base button: works on white card background */
 .screen button {
-  border: 0;
+  border: 1.5px solid var(--bd-subtle);
   border-radius: 999px;
   min-height: 42px;
   padding: 10px 18px;
-  background: #f0f2ed;
-  color: #163300;
-  font-weight: 700;
+  background: var(--bg-card);
+  color: var(--forest, #163300);
+  font-weight: 650;
   font-size: 13px;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .screen button:disabled {
   opacity: 0.45;
   cursor: default;
 }
+.screen button:not(:disabled):hover {
+  background: var(--bg-raised);
+}
 .screen :is(button, a):focus-visible,
 .homeCard:focus-visible {
-  outline: 2px solid #59833e;
+  outline: 2px solid var(--lime, #9fe870);
   outline-offset: 3px;
 }
 .screen input:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(22, 51, 0, 0.15);
 }
+
+/* ── Layout helpers ────────────────────────────────────── */
 .toolbar,
 .header,
 .actions,
@@ -63,15 +99,22 @@
   font-size: 13px;
 }
 .toolbar > a {
+  color: var(--tx-ground-muted);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+.toolbar > a:hover {
+  color: var(--tx-ground);
+}
 .badge {
-  padding: 5px 12px;
-  border-radius: 99px;
-  background: #e2f6d5;
-  font-size: 10px;
-  font-weight: 750;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(159, 232, 112, 0.12);
+  color: var(--lime, #9fe870);
+  border: 1px solid rgba(159, 232, 112, 0.25);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
 }
 .header {
   justify-content: space-between;
@@ -80,15 +123,16 @@
   padding: 6px 0 2px;
 }
 .header h1 {
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: clamp(27px, 2.8vw, 42px);
   font-weight: 900;
   line-height: 1.1;
   letter-spacing: -1.5px;
   overflow-wrap: anywhere;
-  font-family: var(--font-display, "Inter Tight", sans-serif);
+  color: var(--lime, #9fe870);
 }
 .header p {
-  color: #52574e;
+  color: var(--tx-ground-muted);
   margin-top: 6px;
   font-size: 14px;
 }
@@ -97,31 +141,55 @@
   flex-shrink: 0;
   justify-content: flex-end;
 }
+/* Header-level buttons live on Forest ground — ghost treatment */
 .actions button {
-  background: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--tx-ground);
   white-space: nowrap;
 }
+.actions button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+/* Primary (lime) overrides apply everywhere: header + cards */
 .screen .primary {
-  background: var(--lime);
+  background: var(--lime, #9fe870);
+  border-color: var(--lime, #9fe870);
+  color: var(--forest, #163300);
 }
+.screen .primary:not(:disabled):hover {
+  background: #cdffad;
+  border-color: #cdffad;
+}
+/* Dark (Forest-fill) is used inside white cards only */
 .screen .dark {
-  background: var(--forest);
-  color: var(--lime);
+  background: var(--forest, #163300);
+  border-color: var(--forest, #163300);
+  color: var(--lime, #9fe870);
 }
+.screen .dark:not(:disabled):hover {
+  background: #0f2500;
+  border-color: #0f2500;
+}
+
 .demoNote {
   margin: 20px 0 0;
   font-size: 12px;
-  color: #6b7364;
+  color: var(--tx-ground-faint);
 }
 .statusStrip {
   margin: 14px 0 0;
 }
 .closed {
   padding: 12px 18px;
-  border-radius: 16px;
-  background: #e2f6d5;
+  border-radius: 14px;
+  background: rgba(159, 232, 112, 0.1);
+  color: var(--lime, #9fe870);
+  border: 1px solid rgba(159, 232, 112, 0.2);
   font-size: 13px;
 }
+
+/* ── Columns grid ──────────────────────────────────────── */
 .columns {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.7fr) minmax(200px, 0.9fr);
@@ -134,25 +202,32 @@
   gap: 18px;
   min-width: 0;
 }
+
+/* ── Cards ─────────────────────────────────────────────── */
 .card {
-  background: white;
-  border-radius: 28px;
+  background: var(--bg-card);
+  border-radius: 22px;
   padding: 22px;
   min-width: 0;
+  color: var(--tx-primary); /* reset — overrides Forest ground inheritance */
 }
-.card h3 {
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.45px;
-}
-.card p {
-  font-size: 12px;
-  color: #555b50;
-}
+/* Card buttons sit on white: outline style (base) is already correct */
 .card > button {
   margin-top: 16px;
 }
+.card h3 {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  color: var(--tx-primary);
+}
+.card p {
+  font-size: 13px;
+  color: var(--tx-secondary);
+}
+
+/* ── Progress card ─────────────────────────────────────── */
 .progressCard {
   padding: 28px 22px 22px;
 }
@@ -163,7 +238,7 @@
   margin: 0 auto 42px;
   padding: 12px;
   transform: rotate(-5deg);
-  background: conic-gradient(#9fe870 var(--ring-pct), #edf0e8 0);
+  background: conic-gradient(var(--lime, #9fe870) var(--ring-pct), var(--ch-track) 0);
   transition: --ring-pct 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ring > div {
@@ -174,25 +249,27 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: white;
+  background: var(--bg-card);
   transform: rotate(5deg);
 }
 .ring strong {
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: 74px;
   line-height: 1;
   font-weight: 900;
   letter-spacing: -4px;
-  font-family: var(--font-display, "Inter Tight", sans-serif);
+  color: var(--tx-primary);
 }
 .ring span {
   font-size: 12px;
   font-weight: 650;
   padding: 6px;
   text-align: center;
+  color: var(--tx-secondary);
 }
 .card dl {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 .card dl > div {
   display: flex;
@@ -201,21 +278,25 @@
   margin-top: 5px;
 }
 .card dt {
-  color: #555b50;
+  color: var(--tx-secondary);
 }
 .card dd {
   font-weight: 750;
   text-align: right;
   margin: 0;
+  color: var(--tx-primary);
 }
 .collected {
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: clamp(25px, 2.4vw, 36px);
   font-weight: 900;
   letter-spacing: -1px;
   margin: 3px 0;
   overflow-wrap: anywhere;
-  font-family: var(--font-display, "Inter Tight", sans-serif);
+  color: var(--tx-primary);
 }
+
+/* ── Activity chart ────────────────────────────────────── */
 .activity {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
@@ -224,11 +305,13 @@
 }
 .activity > div > strong {
   display: block;
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: 52px;
   line-height: 1.1;
   margin-top: 8px;
   font-weight: 900;
   letter-spacing: -2px;
+  color: var(--tx-primary);
 }
 .bars {
   display: flex;
@@ -245,22 +328,21 @@
   justify-content: end;
   font-size: 11px;
   text-align: center;
+  color: var(--tx-tertiary);
 }
 .bars span {
   width: 100%;
   max-width: 27px;
   min-height: 4px;
   border-radius: 4px 4px 0 0;
-  background: #63884c;
+  background: var(--ch-bar);
   transform-origin: bottom;
   animation: bar-grow 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
-
 @keyframes bar-grow {
   from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
+  to   { transform: scaleY(1); }
 }
-
 .bars > div:nth-child(1) span { animation-delay: 0.05s; }
 .bars > div:nth-child(2) span { animation-delay: 0.10s; }
 .bars > div:nth-child(3) span { animation-delay: 0.15s; }
@@ -269,7 +351,7 @@
 .bars > div:nth-child(6) span { animation-delay: 0.30s; }
 .bars > div:nth-child(7) span { animation-delay: 0.35s; }
 .bars > div:last-child span {
-  background: #163300;
+  background: var(--forest, #163300);
 }
 .bars small {
   line-height: 1.2;
@@ -278,7 +360,10 @@
 .bars strong {
   font-size: 11px;
   margin-bottom: 3px;
+  color: var(--tx-secondary);
 }
+
+/* ── People list ───────────────────────────────────────── */
 .listHeader {
   justify-content: space-between;
   flex-wrap: wrap;
@@ -290,12 +375,12 @@
 .listHeader input {
   min-width: 0;
   width: 100%;
-  background: #f0f2ed;
+  background: var(--bg-sunken);
   border-radius: 99px;
   border: 0;
   padding: 12px 18px;
   font-size: 13px;
-  color: #163300;
+  color: var(--forest, #163300);
   transition: box-shadow 0.15s ease;
 }
 .people {
@@ -311,10 +396,13 @@
   gap: 10px;
   align-items: center;
   padding: 10px;
-  border-radius: 18px;
-  background: #f6f6ef;
+  border-radius: 16px;
+  background: var(--bg-raised);
   min-width: 0;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.15s ease;
+}
+.person:hover {
+  background: var(--bg-sunken);
 }
 .avatar {
   width: 36px;
@@ -322,10 +410,11 @@
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
-  background: #e2f6d5;
+  background: var(--mint);
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 800;
+  color: var(--forest, #163300);
 }
 .person > div {
   min-width: 0;
@@ -333,39 +422,53 @@
 }
 .person strong {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
+  color: var(--tx-primary);
   overflow-wrap: anywhere;
 }
 .person p {
-  font-size: 11px;
+  font-size: 12px;
+  color: var(--tx-secondary);
 }
 .person > b {
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
+  color: var(--tx-secondary);
 }
 .person button {
-  background: white;
   padding: 8px 13px;
-  font-size: 11px;
+  font-size: 12px;
+  min-height: 36px;
+  margin-top: 0;
 }
 .listFooter {
   justify-content: space-between;
   margin-top: 12px;
-  font-size: 11px;
-  color: #555b50;
+  font-size: 12px;
+  color: var(--tx-secondary);
 }
 .listFooter button {
   background: transparent;
-  padding: 5px;
+  border-color: transparent;
+  padding: 5px 8px;
   font-size: 12px;
+  min-height: 32px;
+  margin-top: 0;
+  font-weight: 700;
 }
+.listFooter button:not(:disabled):hover {
+  background: var(--bg-sunken);
+  border-color: var(--bd-subtle);
+}
+
+/* ── Missing section ───────────────────────────────────── */
 .missing {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px;
-  border-radius: 18px;
-  background: rgba(255, 192, 145, 0.18);
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bg-raised);
   margin: -4px -4px 18px;
 }
 .missing > div {
@@ -373,11 +476,18 @@
 }
 .missing h3 {
   font-size: 15px;
+  color: var(--tx-primary);
+}
+.missing p {
+  font-size: 13px;
+  color: var(--tx-secondary);
 }
 .missing > strong {
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: clamp(21px, 2.3vw, 34px);
   letter-spacing: -1px;
   font-weight: 900;
+  color: var(--tx-primary);
 }
 .warning {
   display: inline-grid;
@@ -385,18 +495,24 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #f4cf3f;
+  background: var(--forest, #163300);
+  border: 1.5px solid rgba(159, 232, 112, 0.35);
   flex-shrink: 0;
   font-weight: 800;
+  color: var(--lime, #9fe870);
 }
+
+/* ── Paid strip ────────────────────────────────────────── */
 .paidStrip {
-  gap: 10px;
+  gap: 12px;
   display: flex;
   align-items: center;
   font-size: 13px;
+  color: var(--tx-primary);
 }
 .paidStrip > strong {
   flex: 1;
+  font-size: 13px;
 }
 .paidStrip > button {
   margin: 0;
@@ -407,26 +523,34 @@
 .cardTitle > div {
   flex: 1;
 }
+
+/* ── Reminders ─────────────────────────────────────────── */
 .nextReminder {
   margin: 20px 0 0;
+  font-size: 13px;
+  color: var(--tx-secondary);
 }
 .nextReminder strong {
   display: inline-block;
   margin-top: 4px;
-  color: #163300;
+  color: var(--tx-primary);
   font-size: 15px;
 }
+
+/* ── Exception flag ────────────────────────────────────── */
 .card h3 small {
   float: right;
   font-size: 12px;
   font-weight: 500;
+  color: var(--tx-secondary);
 }
 .exception {
   padding: 14px;
-  border-radius: 18px;
-  background: #f6f6ef;
+  border-radius: 16px;
+  background: var(--bg-raised);
   margin-top: 14px;
   font-size: 13px;
+  color: var(--tx-primary);
 }
 .exception > div {
   display: flex;
@@ -442,9 +566,13 @@
 .smallActions button {
   font-size: 12px;
   padding: 10px 13px;
+  min-height: 38px;
+  margin-top: 0;
 }
+
+/* ── Answer track ──────────────────────────────────────── */
 .answerTrack {
-  background: #edf0e8;
+  background: var(--ch-track);
   border-radius: 99px;
   height: 7px;
   margin: 22px 0 8px;
@@ -453,19 +581,22 @@
   display: block;
   width: 43%;
   height: 100%;
-  background: #163300;
+  background: var(--forest, #163300);
   border-radius: inherit;
 }
 .answers {
   list-style: none;
-  font-size: 12px;
+  font-size: 13px;
   padding: 0;
   margin-top: 15px;
 }
 .answers li {
   padding: 8px 0;
-  border-top: 1px solid #edf0e8;
+  border-top: 1px solid var(--bd-subtle);
+  color: var(--tx-primary);
 }
+
+/* ── QR teaser ─────────────────────────────────────────── */
 .qrTeaser {
   display: flex;
   align-items: center;
@@ -473,17 +604,20 @@
 }
 .qrTeaser svg {
   flex-shrink: 0;
-  border: 5px solid white;
+  border: 5px solid var(--bg-card);
   box-sizing: content-box;
 }
 .qrTeaser h3 {
   font-size: 15px;
 }
 
+/* ── Exception card accent ─────────────────────────────── */
+/* no coloured border — the heading and content signal the exception */
 .exceptionCard {
-  border-left: 4px solid #ffc091;
-  background: #fffcf8;
+  background: var(--bg-card);
 }
+
+/* ── Secondary / demoted actions ───────────────────────── */
 .secondaryRow {
   display: flex;
   flex-wrap: wrap;
@@ -491,8 +625,9 @@
   margin-top: 24px;
 }
 .textAction {
-  background: transparent;
-  color: #555b50;
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--tx-ground-faint) !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   min-height: 36px;
@@ -500,17 +635,20 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.textAction:hover {
-  background: transparent;
-  color: var(--forest);
+.textAction:not(:disabled):hover {
+  color: var(--tx-ground-muted) !important;
+  background: transparent !important;
 }
+
 .notice {
   font-size: 13px;
   margin-top: 22px;
   min-height: 20px;
+  color: var(--tx-ground-muted);
 }
 .noResults {
   padding: 20px;
+  color: var(--tx-secondary);
 }
 .srOnly {
   position: absolute;
@@ -519,9 +657,11 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+
+/* ── Home cards (collection-cards.tsx) ─────────────────── */
 .homeCollections {
   margin: 24px 0;
-  color: #163300;
+  color: var(--forest, #163300);
 }
 .homeHeader {
   display: flex;
@@ -549,12 +689,13 @@
   gap: 7px;
   min-height: 240px;
   padding: 24px;
-  border-radius: 28px;
+  border-radius: 22px;
   background: #f0f2ed;
-  color: #163300;
+  color: var(--forest, #163300);
+  transition: background-color 0.15s ease;
 }
 .homeCard:hover {
-  background: #e2f6d5;
+  background: var(--mint, #e2f6d5);
 }
 .homeTag {
   display: flex;
@@ -567,18 +708,23 @@
   font-size: 24px;
 }
 .homeCard h3 {
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: 24px;
   font-weight: 800;
   line-height: 1.15;
   margin: 8px 0;
+  color: var(--forest, #163300);
 }
 .homeCard > strong {
+  font-family: var(--font-display, "Inter Tight", sans-serif);
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -1px;
+  color: var(--forest, #163300);
 }
 .homeCard > span {
   font-size: 13px;
+  color: #52574e;
 }
 .homeTrack {
   height: 6px;
@@ -591,13 +737,95 @@
 .homeTrack > span {
   height: 100%;
   display: block;
-  background: #9fe870;
+  background: var(--lime, #9fe870);
   border-radius: inherit;
 }
 .homeCard small {
   font-size: 11px;
   color: #65715a;
 }
+
+/* ── Delete section ────────────────────────────────────── */
+/* No danger-zone box — the word "Delete" does the work */
+.deleteSection {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 48px;
+  padding: 28px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.deleteSection h2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tx-ground-faint);
+}
+.deleteSection p {
+  margin-top: 4px;
+  color: var(--tx-ground-faint);
+  font-size: 12px;
+}
+/* Danger button: quiet ghost — no red, no pink */
+.screen .danger {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  font-size: 12px;
+}
+.screen .danger:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.65);
+}
+.deleteConfirmation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.deleteConfirmation > p {
+  flex-basis: 100%;
+  color: var(--tx-ground-faint);
+}
+.deleteSection .deleteError {
+  flex-basis: 100%;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Paid avatars ──────────────────────────────────────── */
+.paidAvatars {
+  display: flex;
+  gap: 0;
+}
+.paidAvatars .avatar {
+  width: 30px;
+  height: 30px;
+  margin-left: -5px;
+  border: 2px solid var(--bg-card);
+  background: var(--lime, #9fe870);
+  color: var(--forest, #163300);
+  font-size: 9px;
+}
+
+/* ── Suggested match ───────────────────────────────────── */
+.suggestedMatch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  font-size: 13px;
+  color: var(--tx-primary);
+}
+
+.bellIcon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── Responsive ────────────────────────────────────────── */
 @media (max-width: 900px) {
   .columns {
     grid-template-columns: minmax(220px, 1fr) minmax(0, 1.8fr);
@@ -608,6 +836,7 @@
   }
   .header {
     flex-direction: column;
+    align-items: flex-start;
   }
   .people {
     grid-template-columns: 1fr;
@@ -633,7 +862,7 @@
   }
   .card {
     padding: 20px;
-    border-radius: 25px;
+    border-radius: 18px;
   }
   .progressCard {
     display: flex;
@@ -688,81 +917,43 @@
   .homeHeader h2 {
     font-size: 21px;
   }
-}
-
-.bellIcon {
-  width: 20px;
-  height: 20px;
-}
-@media (max-width: 650px) {
   .columns > .stack:first-child > section:nth-child(2) {
     display: none;
   }
 }
 
-.deleteSection {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 18px;
-  margin-top: 32px;
-  padding: 24px;
-  border: 1px solid #e0e4da;
-  border-radius: 24px;
+/* ── Entrance motion ───────────────────────────────────── */
+/* One orchestrated moment: the page header appears, the ring scales in. */
+/* Nothing else moves — scattered card entrances are AI-default slop.    */
+@keyframes head-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.deleteSection h2 {
-  font-size: 17px;
-  font-weight: 750;
+@keyframes ring-enter {
+  from { opacity: 0; transform: scale(0.88) rotate(-5deg); }
+  to   { opacity: 1; transform: scale(1)    rotate(-5deg); }
 }
-.deleteSection p {
-  margin-top: 5px;
-  color: #65715a;
-  font-size: 12px;
+.header h1 {
+  animation: head-enter 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
-.screen .danger {
-  background: #fff0ee;
-  color: #a42a20;
+.header p {
+  animation: head-enter 0.38s cubic-bezier(0.16, 1, 0.3, 1) 0.07s backwards;
 }
-.deleteConfirmation {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-.deleteConfirmation > p {
-  flex-basis: 100%;
-}
-.deleteSection .deleteError {
-  flex-basis: 100%;
-  color: #a42a20;
+.ring {
+  animation: ring-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.12s backwards;
 }
 
-.paidAvatars {
-  display: flex;
-  gap: 0;
-}
-.paidAvatars .avatar {
-  width: 30px;
-  height: 30px;
-  margin-left: -5px;
-  border: 2px solid white;
-  background: #9fe870;
-  font-size: 9px;
-}
-.suggestedMatch {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 15px;
-  font-size: 13px;
-}
-
+/* ── Reduced motion ────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .ring {
     transition: none;
+    animation: none;
   }
   .bars span {
+    animation: none;
+  }
+  .header h1,
+  .header p {
     animation: none;
   }
   .person {

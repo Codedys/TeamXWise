@@ -175,7 +175,7 @@ export function CollectionDashboard({
     <main className={`${styles.screen} ${className}`}>
       <div className={styles.toolbar}>
         <Link href="/">← Back to account</Link>
-        <span className={styles.badge}>MOCK DASHBOARD</span>
+        <span className={styles.badge}>demo</span>
       </div>
 
       <header className={styles.header}>
