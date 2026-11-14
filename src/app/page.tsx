@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Inter } from 'next/font/google';
 import styles from './wise-homepage.module.css';
+import Link from 'next/link';
+import { CollectionCards } from './components/collection-dashboard/collection-cards';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -15,12 +17,10 @@ const iconPaths = {
   list: 'M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01',
   payments: 'M4 12 16 1M8 1h8v8M20 12 8 23m8 0H8v-8',
   calendar: 'M7 2v6M17 2v6M3 5h18v16H3ZM15 15h2',
-  repeat:
-    'M20 8a8 8 0 0 0-14-3L3 8m0-5v5h5M4 16a8 8 0 0 0 14 3l3-3m0 5v-5h-5',
+  repeat: 'M20 8a8 8 0 0 0-14-3L3 8m0-5v5h5M4 16a8 8 0 0 0 14 3l3-3m0 5v-5h-5',
   recurring: 'M20 8a8 8 0 1 0-1 11M20 3v5h-5',
   invoice: 'M4 3h16M12 22V7m-6 6 6-6 6 6',
-  request:
-    'M3 4h18v12H3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6 8v4m12 3v7m-3-3 3 3 3-3',
+  request: 'M3 4h18v12H3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6 8v4m12 3v7m-3-3 3 3 3-3',
   split: 'M12 22V12L4 4m0 6V4h6m2 8 8-8m-6 0h6v6',
   users:
     'M13 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM1 22v-3a8 8 0 0 1 16 0v3M15 3a4 4 0 0 1 3 7m1 12v-3a9 9 0 0 0-3-7',
@@ -30,25 +30,16 @@ const iconPaths = {
   plus: 'M12 3v18M3 12h18',
   close: 'm4 4 16 16M20 4 4 20',
   bank: 'm2 7 10-5 10 5H2Zm2 2v11m5-11v11m6-11v11m5-11v11M2 22h20',
-  bag:
-    'm9 6-2-4h10l-2 4m-6 0h6m-6 1C6 10 3 14 3 18c0 4 18 4 18 0 0-4-3-8-6-11M14.5 11h-3a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-3M12 9v12',
+  bag: 'm9 6-2-4h10l-2 4m-6 0h6m-6 1C6 10 3 14 3 18c0 4 18 4 18 0 0-4-3-8-6-11M14.5 11h-3a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-3M12 9v12',
   jar: 'M5 2h14v4H5Zm2 4v3l-3 4v9h16v-9l-3-4V6',
-  coin:
-    'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM15 7h-4a2.5 2.5 0 0 0 0 5h2a2.5 2.5 0 0 1 0 5H9m3-12v14',
-  chip:
-    'M18 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM2 14h4l4-3h5a2 2 0 0 1 0 4h-4m-5-1 4 6h5l7-7a2 2 0 0 0-3-2l-4 4M2 12v9h4v-9Z',
+  coin: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM15 7h-4a2.5 2.5 0 0 0 0 5h2a2.5 2.5 0 0 1 0 5H9m3-12v14',
+  chip: 'M18 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM2 14h4l4-3h5a2 2 0 0 1 0 4h-4m-5-1 4 6h5l7-7a2 2 0 0 0-3-2l-4 4M2 12v9h4v-9Z',
   arrows: 'M2 12h20M8 6l-6 6 6 6m8-12 6 6-6 6',
 } as const;
 
 type IconName = keyof typeof iconPaths;
 
-function Icon({
-  name,
-  className = '',
-}: {
-  name: IconName;
-  className?: string;
-}) {
+function Icon({ name, className = '' }: { name: IconName; className?: string }) {
   return (
     <svg
       className={`${styles.icon} ${className}`}
@@ -82,12 +73,7 @@ function WiseLogo() {
 
 function EuroFlag() {
   return (
-    <svg
-      className={styles.currencyFlag}
-      viewBox="0 0 48 48"
-      role="img"
-      aria-label="Euro"
-    >
+    <svg className={styles.currencyFlag} viewBox="0 0 48 48" role="img" aria-label="Euro">
       <circle cx="24" cy="24" r="24" fill="#17118b" />
       {Array.from({ length: 12 }, (_, index) => (
         <path
@@ -139,10 +125,7 @@ function AccountCover() {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <path
-        d="M0 0H346V70H213C197 70 190 84 173 84S149 70 133 70H0Z"
-        fill="#e8ebe6"
-      />
+      <path d="M0 0H346V70H213C197 70 190 84 173 84S149 70 133 70H0Z" fill="#e8ebe6" />
     </svg>
   );
 }
@@ -188,15 +171,17 @@ function MenuOption({
   description,
   tone = 'forest',
   isNew = false,
+  href,
 }: {
   icon: IconName;
   title: string;
   description: string;
   tone?: 'forest' | 'gold' | 'purple';
   isNew?: boolean;
+  href?: string;
 }) {
-  return (
-    <div className={styles.menuOption}>
+  const content = (
+    <>
       <span className={`${styles.optionIcon} ${styles[tone]}`}>
         <Icon name={icon} />
       </span>
@@ -210,8 +195,18 @@ function MenuOption({
       </div>
 
       <Icon name="chevron" className={styles.optionChevron} />
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className={`${styles.menuOption} ${styles.menuOptionLink}`}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={styles.menuOption}>{content}</div>;
 }
 
 export default function HomePage() {
@@ -221,11 +216,16 @@ export default function HomePage() {
   const previousOverflow = useRef<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
     return () => {
+      // Cached pages stay in the DOM. Release the modal before this page is hidden.
+      dialog?.close();
       if (previousOverflow.current !== null) {
         document.body.style.overflow = previousOverflow.current;
+        previousOverflow.current = null;
       }
+      setMenuOpen(false);
     };
   }, []);
 
@@ -248,7 +248,9 @@ export default function HomePage() {
     }
 
     setMenuOpen(false);
-    triggerRef.current?.focus();
+    // A queued close event must not move focus back to a hidden cached page.
+    const trigger = triggerRef.current;
+    if (trigger?.getClientRects().length) trigger.focus();
   }
 
   return (
@@ -265,11 +267,7 @@ export default function HomePage() {
           <NavItem icon="payments" label="Payments" expanded />
           <NavItem icon="calendar" label="Scheduled transfers" sub />
           <NavItem icon="repeat" label="Direct Debits" sub />
-          <NavItem
-            icon="recurring"
-            label={'Recurring card\npayments'}
-            sub
-          />
+          <NavItem icon="recurring" label={'Recurring card\npayments'} sub />
           <NavItem icon="invoice" label="Pay invoices" sub />
           <NavItem icon="request" label="Payment requests" sub />
           <NavItem icon="split" label="Bill splits" sub />
@@ -284,9 +282,7 @@ export default function HomePage() {
             <WiseLogo />
           </div>
 
-          <span className={`${styles.pill} ${styles.earn}`}>
-            Earn €150
-          </span>
+          <span className={`${styles.pill} ${styles.earn}`}>Earn €150</span>
 
           <button
             ref={triggerRef}
@@ -323,25 +319,14 @@ export default function HomePage() {
             </div>
 
             <div className={styles.accountActions}>
-              <span className={`${styles.pill} ${styles.primary}`}>
-                Send
-              </span>
-              <span className={`${styles.pill} ${styles.secondary}`}>
-                Add money
-              </span>
-              <span className={`${styles.pill} ${styles.secondary}`}>
-                Request
-              </span>
-              <span className={`${styles.pill} ${styles.secondary}`}>
-                Upload
-              </span>
+              <span className={`${styles.pill} ${styles.primary}`}>Send</span>
+              <span className={`${styles.pill} ${styles.secondary}`}>Add money</span>
+              <span className={`${styles.pill} ${styles.secondary}`}>Request</span>
+              <span className={`${styles.pill} ${styles.secondary}`}>Upload</span>
             </div>
           </section>
 
-          <section
-            className={styles.accountsCarousel}
-            aria-label="Your accounts"
-          >
+          <section className={styles.accountsCarousel} aria-label="Your accounts">
             <AccountCard />
             <AccountCard savings />
 
@@ -358,29 +343,22 @@ export default function HomePage() {
                   <br />
                   Make more of your money.
                 </p>
-                <span className={`${styles.pill} ${styles.primary}`}>
-                  Do more
-                </span>
+                <span className={`${styles.pill} ${styles.primary}`}>Do more</span>
               </div>
             </article>
           </section>
 
-          <section
-            className={styles.cardPromotion}
-            aria-label="Get a Wise card"
-          >
+          <CollectionCards />
+
+          <section className={styles.cardPromotion} aria-label="Get a Wise card">
             <span className={styles.promotionIcon}>
               <Icon name="card" />
             </span>
 
             <div className={styles.promotionContent}>
               <h2>Get a Wise card</h2>
-              <p>
-                Spend straight from your Wise account, at home and abroad.
-              </p>
-              <span className={`${styles.pill} ${styles.orderCard}`}>
-                Order card
-              </span>
+              <p>Spend straight from your Wise account, at home and abroad.</p>
+              <span className={`${styles.pill} ${styles.orderCard}`}>Order card</span>
             </div>
 
             <span className={styles.promotionClose} aria-hidden="true">
@@ -388,28 +366,20 @@ export default function HomePage() {
             </span>
           </section>
 
-          <section
-            className={styles.transactions}
-            aria-labelledby="transactions-heading"
-          >
+          <section className={styles.transactions} aria-labelledby="transactions-heading">
             <div className={styles.transactionsHeader}>
               <h2 id="transactions-heading">Transactions</h2>
               <span className={styles.seeAll}>See all</span>
             </div>
 
-            <div
-              className={styles.transactionsPlaceholder}
-              aria-hidden="true"
-            >
+            <div className={styles.transactionsPlaceholder} aria-hidden="true">
               <span className={styles.placeholderIcon}>
                 <Icon name="arrows" />
               </span>
             </div>
           </section>
 
-          <p className={styles.conceptNote}>
-            Team X · Wise Hackathon 2026 concept
-          </p>
+          <p className={styles.conceptNote}>Team X · Wise Hackathon 2026 concept</p>
         </main>
       </div>
 
@@ -457,6 +427,7 @@ export default function HomePage() {
               icon="chip"
               title="Chip in"
               description="Collect money from a group. One link, no chasing."
+              href="/chip-in"
               isNew
             />
           </section>

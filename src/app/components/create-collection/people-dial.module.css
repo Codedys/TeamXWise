@@ -1,0 +1,124 @@
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 722px;
+  height: 372px;
+  overflow: hidden;
+  border-radius: 36px;
+  background: #f0f2ed;
+  color: #163300;
+}
+.valueArea {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+.value {
+  width: 4.6ch;
+  max-width: 100%;
+  height: 130px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  outline-offset: -4px !important;
+  background: transparent;
+  color: #163300;
+  font-size: 120px !important;
+  font-weight: 900 !important;
+  line-height: 1;
+  letter-spacing: -8px;
+  text-align: center;
+  appearance: textfield;
+}
+.value::-webkit-inner-spin-button,
+.value::-webkit-outer-spin-button {
+  appearance: none;
+}
+.value::placeholder {
+  color: #163300;
+}
+.unit {
+  color: #454745;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 26px;
+}
+.wheel {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.wheel:active {
+  cursor: grabbing;
+}
+.wheel:focus-visible {
+  outline-offset: -5px !important;
+  border-radius: inherit;
+}
+.wheel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.adjust {
+  position: absolute;
+  bottom: 20px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #163300;
+  font-size: 32px !important;
+  font-weight: 650 !important;
+  cursor: pointer;
+}
+.adjust:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.minus {
+  left: 20px;
+}
+.plus {
+  right: 20px;
+}
+@media (max-width: 700px) {
+  .panel {
+    height: 320px;
+    border-radius: 28px;
+  }
+  .value {
+    height: 112px;
+    font-size: 100px !important;
+    letter-spacing: -6px;
+  }
+  .valueArea {
+    top: 8px;
+  }
+  .unit {
+    font-size: 16px;
+  }
+  .adjust {
+    width: 48px;
+    height: 48px;
+    bottom: 16px;
+  }
+  .minus {
+    left: 16px;
+  }
+  .plus {
+    right: 16px;
+  }
+}

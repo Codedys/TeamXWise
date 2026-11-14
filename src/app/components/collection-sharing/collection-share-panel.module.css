@@ -1,0 +1,146 @@
+.share {
+  color: #163300;
+}
+.summary {
+  margin: 0 0 24px;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.summary strong {
+  font-size: 26px;
+  font-weight: 800;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.linkPanel {
+  min-width: 0;
+  padding: 28px;
+  border-radius: 28px;
+  background: #f0f2ed;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  margin-bottom: 22px;
+  border-radius: 999px;
+  background: #e2f6d5;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 1px;
+}
+.linkPanel label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.linkPanel input {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 2px solid #cbd0c6;
+  border-radius: 16px;
+  background: #fff;
+  color: #163300;
+  font: inherit;
+  font-size: 14px;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin: 18px 0;
+}
+.share button {
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #9fe870;
+  color: #163300;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.buttons a {
+  font-size: 14px !important;
+}
+.buttons a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 650;
+}
+.notice,
+.qrPanel p {
+  margin-top: 20px;
+  color: #555d4f;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.progress {
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.qrPanel {
+  text-align: center;
+}
+.qr {
+  display: inline-flex;
+  padding: 20px;
+  border: 1px solid #e2e7dd;
+  border-radius: 24px;
+  background: #fff;
+}
+.qr svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.qrPanel button {
+  display: block;
+  margin: 16px auto 0;
+  background: #e2f6d5;
+}
+.status {
+  min-height: 24px;
+  margin-top: 18px;
+  font-size: 14px;
+}
+.error {
+  color: #bd2630;
+}
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .qrPanel {
+    max-width: 360px;
+  }
+}
+@media (max-width: 700px) {
+  .linkPanel {
+    padding: 22px 18px;
+  }
+  .summary strong {
+    font-size: 23px;
+  }
+}
+
+.invitation {
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 18px;
+  background: white;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.invitation p {
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
