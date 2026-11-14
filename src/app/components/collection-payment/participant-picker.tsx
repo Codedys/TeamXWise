@@ -1,4 +1,5 @@
 'use client';
+import { WiseCheck } from '../icons/wise-check';
 import { useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import type { CollectionPreview } from '../collection-preview/collection-preview-client';
@@ -39,19 +40,21 @@ export function ParticipantPicker({
           >
             <span>{person.name}</span>
             <span>
-              {person.status === 'paid'
-                ? 'Already paid ✓'
-                : person.status === 'pending'
-                  ? 'Transfer pending'
-                  : '›'}
+              {person.status === 'paid' ? (
+                <>
+                  Already paid <WiseCheck size={16} />
+                </>
+              ) : person.status === 'pending' ? (
+                'Transfer pending'
+              ) : (
+                '›'
+              )}
             </span>
           </button>
         ))}
       </div>
       {!people.length && <p className={styles.help}>No matching names.</p>}
-      <p className={styles.help}>
-        Can’t find the name? Ask {collection.ownerName} to add it.
-      </p>
+      <p className={styles.help}>Can’t find the name? Ask {collection.ownerName} to add it.</p>
       <p className={styles.demoNote}>
         Frontend demo · selecting a name does not verify anyone’s identity.
       </p>

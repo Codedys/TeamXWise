@@ -150,7 +150,9 @@
   border-radius: 16px;
   color: #163300;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .help {
   margin: 18px 0;
@@ -199,7 +201,9 @@
   border-radius: 16px;
   color: #163300;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .payerFields textarea {
   resize: vertical;
@@ -587,4 +591,15 @@
   .secondary {
     transition: none;
   }
+}
+
+/* Keep the existing success layout above its decorative confetti. */
+.result {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.result > :not([data-celebration-confetti]) {
+  position: relative;
+  z-index: 1;
 }

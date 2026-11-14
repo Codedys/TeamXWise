@@ -36,7 +36,6 @@ describe('saved dashboard preferences', () => {
     dashboards.activate(one.id);
     dashboards.activate(two.id);
     const prefs = defaultDashboardPreferences();
-    prefs.remindersEnabled = false;
     prefs.rules[0].message = 'Please chip in, [name].';
     prefs.cohosts = ['Alex Kask'];
     prefs.completionDismissed = true;
@@ -44,7 +43,9 @@ describe('saved dashboard preferences', () => {
     expect(
       createBrowserCollectionDashboardClient({ storage }).get(one.id)?.preferences,
     ).toEqual(prefs);
-    expect(dashboards.get(two.id)?.preferences.remindersEnabled).toBe(true);
+    expect(dashboards.get(two.id)?.preferences.rules[0].message).toBe(
+      defaultDashboardPreferences().rules[0].message,
+    );
     dashboards.remove(one.id);
     expect(createBrowserCollectionDashboardClient({ storage }).get(one.id)).toBeNull();
   });

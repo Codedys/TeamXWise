@@ -1,5 +1,7 @@
 'use client';
 
+import { WiseCheck } from '../icons/wise-check';
+
 import {
   amountInMinorUnits,
   displayMoney,
@@ -62,7 +64,7 @@ export function CollectionLimitStep({
             >
               <span className={styles.limitOptionHeader}>
                 <span className={styles.audienceRadio} aria-hidden="true">
-                  {draft.limitType === option.value ? '✓' : ''}
+                  {draft.limitType === option.value ? <WiseCheck /> : null}
                 </span>
                 <strong>{option.title}</strong>
               </span>
@@ -93,9 +95,7 @@ export function CollectionLimitStep({
                     }
                   }}
                   aria-invalid={!!errors.spotLimit}
-                  aria-describedby={
-                    errors.spotLimit ? 'error-spotLimit' : 'limit-summary'
-                  }
+                  aria-describedby={errors.spotLimit ? 'error-spotLimit' : 'limit-summary'}
                 />
                 <button
                   type="button"
@@ -118,9 +118,7 @@ export function CollectionLimitStep({
                   value={draft.goalAmount}
                   onChange={(event) => onChange({ goalAmount: event.target.value })}
                   aria-invalid={!!errors.goalAmount}
-                  aria-describedby={
-                    errors.goalAmount ? 'error-goalAmount' : 'limit-summary'
-                  }
+                  aria-describedby={errors.goalAmount ? 'error-goalAmount' : 'limit-summary'}
                 />
               </label>
             )}

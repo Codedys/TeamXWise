@@ -104,6 +104,7 @@ export function createBrowserCollectionPreviewClient(options: {
     for (const [id, record] of memory) {
       const complete = completed(record.collection);
       if (complete || now() >= record.expiresAt) {
+        options.dashboards?.update(record.collection, record.receipts);
         options.dashboards?.close(id, complete ? 'complete' : 'expired');
         memory.delete(id);
         changed = true;
@@ -136,7 +137,7 @@ export function createBrowserCollectionPreviewClient(options: {
   }
   function write(record: PreviewRecord) {
     memory.set(record.collection.id, record);
-    options.dashboards?.update(record.collection);
+    options.dashboards?.update(record.collection, record.receipts);
     prune();
     persist();
     listeners.forEach((listener) => listener());
@@ -209,6 +210,7 @@ export function createBrowserCollectionPreviewClient(options: {
   }
   function markPaid(record: PreviewRecord, receipt: PaymentReceiptPreview) {
     receipt.status = 'paid';
+    receipt.paidAt = now();
     record.collection.progress.paidSpots += receipt.quantity;
     record.collection.progress.receivedMinorUnits += receipt.sourceMinorUnits;
     const person = record.collection.participants.find((p) => p.id === receipt.participantId);
@@ -319,7 +321,7 @@ export function createBrowserCollectionPreviewClient(options: {
       memory.clear();
       records.forEach((value, key) => memory.set(key, value));
       storageBlocked = false;
-      options.dashboards?.update(parsed);
+      options.dashboards?.update(parsed, next.receipts);
       listeners.forEach((listener) => listener());
       return structuredClone(parsed);
     },
@@ -339,7 +341,9 @@ export function createBrowserCollectionPreviewClient(options: {
       listeners.forEach((listener) => listener());
     },
     async get(id) {
-      return structuredClone(read().get(id)?.collection ?? null);
+      const record = read().get(id);
+      if (record) options.dashboards?.update(record.collection, record.receipts);
+      return structuredClone(record?.collection ?? null);
     },
     async quote(id, currency, quantity) {
       return makeQuote(requireRecord(id).collection, currency, quantity);
@@ -397,6 +401,9 @@ export function createBrowserCollectionPreviewClient(options: {
         ...quote,
         method: request.method,
         status: 'pending',
+        answer: collection.customQuestion ? request.answer.trim() : null,
+        createdAt: now(),
+        paidAt: null,
       };
       record.receipts.push(receipt);
       if (request.method === 'instant') markPaid(record, receipt);

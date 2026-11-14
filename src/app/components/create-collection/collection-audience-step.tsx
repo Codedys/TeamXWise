@@ -1,9 +1,8 @@
 'use client';
 
-import {
-  suggestCollectionAudience,
-  type CollectionAudience,
-} from './create-collection-draft';
+import { WiseCheck } from '../icons/wise-check';
+
+import { suggestCollectionAudience, type CollectionAudience } from './create-collection-draft';
 import styles from './create-collection-wizard.module.css';
 
 const OPTIONS = [
@@ -32,8 +31,7 @@ export function CollectionAudienceStep({
   return (
     <>
       <p className={styles.description}>
-        For “{title}”, we picked the one that usually fits. Click the other if we got it
-        wrong.
+        For “{title}”, we picked the one that usually fits. Click the other if we got it wrong.
       </p>
       <fieldset className={styles.audienceOptions} aria-label="Who can chip in">
         {OPTIONS.map((option) => (
@@ -51,7 +49,7 @@ export function CollectionAudienceStep({
             />
             <span className={styles.audienceOptionHeader}>
               <span className={styles.audienceRadio} aria-hidden="true">
-                {value === option.value ? '✓' : ''}
+                {value === option.value ? <WiseCheck /> : null}
               </span>
               <strong>{option.title}</strong>
               {option.value === suggested && (
