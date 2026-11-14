@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { browserCollectionDashboardClient } from '../collection-dashboard/browser-collection-dashboard-client';
+import { activateChipInDashboardAction } from '@/app/actions';
 import { CollectionSharePanel } from '../collection-sharing/collection-share-panel';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition, type FormEvent } from 'react';
@@ -503,9 +503,10 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
                 disabled={!publishedId}
                 onClick={() => {
                   if (!publishedId) return;
-                  browserCollectionDashboardClient.activate(publishedId);
-                  resetCollectionDraft();
-                  router.push('/');
+                  void activateChipInDashboardAction(publishedId).finally(() => {
+                    resetCollectionDraft();
+                    router.push('/');
+                  });
                 }}
               >
                 Done

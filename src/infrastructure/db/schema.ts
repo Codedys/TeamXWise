@@ -2,11 +2,13 @@ import {
   boolean,
   doublePrecision,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import type { DashboardPreferencesDto } from '@/application/ports/output/chip-in-dashboard.dto';
 
 export const collectionsTable = pgTable('collections', {
   id: text('id').primaryKey(),
@@ -35,6 +37,8 @@ export const chipInsTable = pgTable('chip_ins', {
   customQuestion: text('custom_question'),
   paidSpots: integer('paid_spots').notNull().default(0),
   receivedMinorUnits: integer('received_minor_units').notNull().default(0),
+  isActivated: boolean('is_activated').notNull().default(false),
+  preferences: jsonb('preferences').notNull().$type<DashboardPreferencesDto>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
 

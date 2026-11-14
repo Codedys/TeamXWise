@@ -7,6 +7,12 @@ import { GetChipInPreviewController } from '@/adapters/controllers/get-chip-in-p
 import { GetPaymentReceiptController } from '@/adapters/controllers/get-payment-receipt.controller';
 import { SubmitPaymentController } from '@/adapters/controllers/submit-payment.controller';
 import { ConfirmBankTransferController } from '@/adapters/controllers/confirm-bank-transfer.controller';
+import { GetChipInDashboardController } from '@/adapters/controllers/get-chip-in-dashboard.controller';
+import { ListOwnerChipInsController } from '@/adapters/controllers/list-owner-chip-ins.controller';
+import { SaveDashboardPreferencesController } from '@/adapters/controllers/save-dashboard-preferences.controller';
+import { ActivateChipInDashboardController } from '@/adapters/controllers/activate-chip-in-dashboard.controller';
+import { RemoveChipInController } from '@/adapters/controllers/remove-chip-in.controller';
+import { ConfigureChipInLinkController } from '@/adapters/controllers/configure-chip-in-link.controller';
 import { DrizzleCollectionRepository } from '@/adapters/gateways/drizzle-collection.repository';
 import { InMemoryCollectionRepository } from '@/adapters/gateways/in-memory-collection.repository';
 import { DrizzleChipInRepository } from '@/adapters/gateways/drizzle-chip-in.repository';
@@ -18,6 +24,12 @@ import { GetChipInPreviewPresenter } from '@/adapters/presenters/get-chip-in-pre
 import { GetPaymentReceiptPresenter } from '@/adapters/presenters/get-payment-receipt.presenter';
 import { SubmitPaymentPresenter } from '@/adapters/presenters/submit-payment.presenter';
 import { ConfirmBankTransferPresenter } from '@/adapters/presenters/confirm-bank-transfer.presenter';
+import { GetChipInDashboardPresenter } from '@/adapters/presenters/get-chip-in-dashboard.presenter';
+import { ListOwnerChipInsPresenter } from '@/adapters/presenters/list-owner-chip-ins.presenter';
+import { SaveDashboardPreferencesPresenter } from '@/adapters/presenters/save-dashboard-preferences.presenter';
+import { ActivateChipInDashboardPresenter } from '@/adapters/presenters/activate-chip-in-dashboard.presenter';
+import { RemoveChipInPresenter } from '@/adapters/presenters/remove-chip-in.presenter';
+import { ConfigureChipInLinkPresenter } from '@/adapters/presenters/configure-chip-in-link.presenter';
 import type { CollectionRepository } from '@/application/ports/repositories/collection.repository';
 import type { ChipInRepository } from '@/application/ports/repositories/chip-in.repository';
 import { CreateCollectionInteractor } from '@/application/use-cases/collections/create-collection.interactor';
@@ -27,6 +39,12 @@ import { GetChipInPreviewInteractor } from '@/application/use-cases/chip-in/get-
 import { GetPaymentReceiptInteractor } from '@/application/use-cases/chip-in/get-payment-receipt.interactor';
 import { SubmitPaymentInteractor } from '@/application/use-cases/chip-in/submit-payment.interactor';
 import { ConfirmBankTransferInteractor } from '@/application/use-cases/chip-in/confirm-bank-transfer.interactor';
+import { GetChipInDashboardInteractor } from '@/application/use-cases/chip-in/get-chip-in-dashboard.interactor';
+import { ListOwnerChipInsInteractor } from '@/application/use-cases/chip-in/list-owner-chip-ins.interactor';
+import { SaveDashboardPreferencesInteractor } from '@/application/use-cases/chip-in/save-dashboard-preferences.interactor';
+import { ActivateChipInDashboardInteractor } from '@/application/use-cases/chip-in/activate-chip-in-dashboard.interactor';
+import { RemoveChipInInteractor } from '@/application/use-cases/chip-in/remove-chip-in.interactor';
+import { ConfigureChipInLinkInteractor } from '@/application/use-cases/chip-in/configure-chip-in-link.interactor';
 import { loadEnv } from '@/infrastructure/config/env';
 import { createDrizzleClient } from '@/infrastructure/db/client';
 
@@ -125,4 +143,40 @@ export function getConfirmBankTransferController(): ConfirmBankTransferControlle
   const presenter = new ConfirmBankTransferPresenter();
   const interactor = new ConfirmBankTransferInteractor(getChipInRepository(), presenter);
   return new ConfirmBankTransferController(interactor, presenter);
+}
+
+export function getGetChipInDashboardController(): GetChipInDashboardController {
+  const presenter = new GetChipInDashboardPresenter();
+  const interactor = new GetChipInDashboardInteractor(getChipInRepository(), presenter);
+  return new GetChipInDashboardController(interactor, presenter);
+}
+
+export function getListOwnerChipInsController(): ListOwnerChipInsController {
+  const presenter = new ListOwnerChipInsPresenter();
+  const interactor = new ListOwnerChipInsInteractor(getChipInRepository(), presenter);
+  return new ListOwnerChipInsController(interactor, presenter);
+}
+
+export function getSaveDashboardPreferencesController(): SaveDashboardPreferencesController {
+  const presenter = new SaveDashboardPreferencesPresenter();
+  const interactor = new SaveDashboardPreferencesInteractor(getChipInRepository(), presenter);
+  return new SaveDashboardPreferencesController(interactor, presenter);
+}
+
+export function getActivateChipInDashboardController(): ActivateChipInDashboardController {
+  const presenter = new ActivateChipInDashboardPresenter();
+  const interactor = new ActivateChipInDashboardInteractor(getChipInRepository(), presenter);
+  return new ActivateChipInDashboardController(interactor, presenter);
+}
+
+export function getRemoveChipInController(): RemoveChipInController {
+  const presenter = new RemoveChipInPresenter();
+  const interactor = new RemoveChipInInteractor(getChipInRepository(), presenter);
+  return new RemoveChipInController(interactor, presenter);
+}
+
+export function getConfigureChipInLinkController(): ConfigureChipInLinkController {
+  const presenter = new ConfigureChipInLinkPresenter();
+  const interactor = new ConfigureChipInLinkInteractor(getChipInRepository(), presenter);
+  return new ConfigureChipInLinkController(interactor, presenter);
 }

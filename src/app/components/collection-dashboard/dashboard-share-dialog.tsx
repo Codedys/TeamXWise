@@ -109,9 +109,7 @@ export function DashboardShareDialog({
         </div>
       </div>
       {!available && (
-        <p className={styles.warning}>
-          This demo payment link is complete or expired. Its payment data has been deleted.
-        </p>
+        <p className={styles.warning}>This collection is complete, so sharing is disabled.</p>
       )}
       <footer className={styles.footer}>
         <button
@@ -140,8 +138,7 @@ export function DashboardShareDialog({
         {status}
       </p>
       <p className={styles.help}>
-        Frontend demo · links use this browser’s saved data. Email opens a draft; nothing is
-        sent automatically.
+        Email opens a draft; nothing is sent automatically.
       </p>
     </DashboardDialog>
   );

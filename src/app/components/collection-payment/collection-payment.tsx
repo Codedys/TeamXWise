@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { displayMoney, localDateInput } from '../create-collection/create-collection-draft';
 import { shortDeadline } from '../create-collection/calendar-date';
-import { previewClosedReason } from '../collection-preview/browser-collection-preview-client';
+import { previewClosedReason } from './chip-in-preview-rules';
 import type { ChipInPreviewViewModel } from '@/adapters/presenters/chip-in-preview.view-model';
 import type { PaymentReceiptViewModel } from '@/adapters/presenters/payment-receipt.view-model';
 import { getChipInPreviewAction, getPaymentReceiptAction } from '@/app/actions';

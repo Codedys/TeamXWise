@@ -8,7 +8,11 @@ import { Participant } from '@/domain/entities/participant.entity';
 import { PaymentReceipt } from '@/domain/entities/payment-receipt.entity';
 import { ChipInNotFoundError } from '@/domain/errors/chip-in-not-found.error';
 import { PaymentReceiptNotFoundError } from '@/domain/errors/payment-receipt-not-found.error';
-import type { ChipInRepository } from '@/application/ports/repositories/chip-in.repository';
+import type {
+  ChipInDashboardRecord,
+  ChipInRepository,
+} from '@/application/ports/repositories/chip-in.repository';
+import type { DashboardPreferencesDto } from '@/application/ports/output/chip-in-dashboard.dto';
 import * as schema from '@/infrastructure/db/schema';
 
 const { chipInsTable, chipInParticipantsTable, chipInPaymentsTable } = schema;
@@ -93,7 +97,11 @@ function toPaymentRow(receipt: PaymentReceipt, chipInId: string) {
 export class DrizzleChipInRepository implements ChipInRepository {
   constructor(private readonly db: PostgresJsDatabase<typeof schema>) {}
 
-  async save(chipIn: ChipIn, ownerToken: string): Promise<void> {
+  async save(
+    chipIn: ChipIn,
+    ownerToken: string,
+    preferences: DashboardPreferencesDto,
+  ): Promise<void> {
     await this.db.transaction(async (tx) => {
       await tx.insert(chipInsTable).values({
         id: chipIn.id.toString(),
@@ -114,6 +122,8 @@ export class DrizzleChipInRepository implements ChipInRepository {
         customQuestion: chipIn.customQuestion,
         paidSpots: chipIn.progress.paidSpots,
         receivedMinorUnits: chipIn.progress.receivedMinorUnits,
+        isActivated: false,
+        preferences,
         createdAt: chipIn.createdAt,
       });
       const participants = chipIn.participants;
@@ -235,6 +245,102 @@ export class DrizzleChipInRepository implements ChipInRepository {
         .set({ status: receipt.status })
         .where(eq(chipInPaymentsTable.id, receipt.id));
       return receipt;
+    });
+  }
+
+  async findDashboardById(
+    id: ChipInId,
+    ownerToken: string,
+  ): Promise<ChipInDashboardRecord | null> {
+    const [row] = await this.db
+      .select()
+      .from(chipInsTable)
+      .where(and(eq(chipInsTable.id, id.toString()), eq(chipInsTable.ownerToken, ownerToken)));
+    if (!row) return null;
+    const participantRows = await this.db
+      .select()
+      .from(chipInParticipantsTable)
+      .where(eq(chipInParticipantsTable.chipInId, id.toString()));
+    return {
+      chipIn: toDomainChipIn(row, participantRows),
+      preferences: row.preferences,
+      isActivated: row.isActivated,
+    };
+  }
+
+  async findManyActivatedByOwnerToken(ownerToken: string): Promise<ChipInDashboardRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(chipInsTable)
+      .where(and(eq(chipInsTable.ownerToken, ownerToken), eq(chipInsTable.isActivated, true)));
+    return Promise.all(
+      rows.map(async (row) => {
+        const participantRows = await this.db
+          .select()
+          .from(chipInParticipantsTable)
+          .where(eq(chipInParticipantsTable.chipInId, row.id));
+        return {
+          chipIn: toDomainChipIn(row, participantRows),
+          preferences: row.preferences,
+          isActivated: row.isActivated,
+        };
+      }),
+    );
+  }
+
+  async savePreferences(
+    id: ChipInId,
+    ownerToken: string,
+    preferences: DashboardPreferencesDto,
+  ): Promise<void> {
+    const updated = await this.db
+      .update(chipInsTable)
+      .set({ preferences })
+      .where(and(eq(chipInsTable.id, id.toString()), eq(chipInsTable.ownerToken, ownerToken)))
+      .returning({ id: chipInsTable.id });
+    if (!updated.length) throw new ChipInNotFoundError();
+  }
+
+  async activate(id: ChipInId, ownerToken: string): Promise<void> {
+    const updated = await this.db
+      .update(chipInsTable)
+      .set({ isActivated: true })
+      .where(and(eq(chipInsTable.id, id.toString()), eq(chipInsTable.ownerToken, ownerToken)))
+      .returning({ id: chipInsTable.id });
+    if (!updated.length) throw new ChipInNotFoundError();
+  }
+
+  async updateSettings(chipIn: ChipIn, ownerToken: string): Promise<void> {
+    const updated = await this.db
+      .update(chipInsTable)
+      .set({
+        isOpen: chipIn.isOpen,
+        deadline: chipIn.deadline,
+        priceMinorUnits: chipIn.price.minorUnits,
+        limitType: chipIn.limitType,
+        spotLimit: chipIn.spotLimit,
+        goalMinorUnits: chipIn.goal.minorUnits,
+        customQuestion: chipIn.customQuestion,
+      })
+      .where(
+        and(eq(chipInsTable.id, chipIn.id.toString()), eq(chipInsTable.ownerToken, ownerToken)),
+      )
+      .returning({ id: chipInsTable.id });
+    if (!updated.length) throw new ChipInNotFoundError();
+  }
+
+  async remove(id: ChipInId, ownerToken: string): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const owned = await tx
+        .select({ id: chipInsTable.id })
+        .from(chipInsTable)
+        .where(and(eq(chipInsTable.id, id.toString()), eq(chipInsTable.ownerToken, ownerToken)));
+      if (!owned.length) throw new ChipInNotFoundError();
+      await tx.delete(chipInPaymentsTable).where(eq(chipInPaymentsTable.chipInId, id.toString()));
+      await tx
+        .delete(chipInParticipantsTable)
+        .where(eq(chipInParticipantsTable.chipInId, id.toString()));
+      await tx.delete(chipInsTable).where(eq(chipInsTable.id, id.toString()));
     });
   }
 

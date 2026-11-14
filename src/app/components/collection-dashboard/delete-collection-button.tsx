@@ -1,9 +1,7 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { browserCollectionPreviewClient } from '../collection-preview/browser-collection-preview-client';
-import { browserCollectionDashboardClient } from './browser-collection-dashboard-client';
-import { deleteCollectionPreview } from './delete-collection-preview';
+import { removeChipInAction } from '@/app/actions';
 import styles from './collection-dashboard.module.css';
 
 export function DeleteCollectionButton({ collectionId }: { collectionId: string }) {
@@ -16,7 +14,7 @@ export function DeleteCollectionButton({ collectionId }: { collectionId: string 
       <div>
         <h2>Delete collection</h2>
         <p>
-          Remove this dashboard, its payment link and saved demo payments from this browser.
+          Remove this dashboard, its payment link and saved demo payments.
         </p>
       </div>
       {!confirming ? (
@@ -43,20 +41,12 @@ export function DeleteCollectionButton({ collectionId }: { collectionId: string 
             onClick={() =>
               startTransition(async () => {
                 setError('');
-                try {
-                  await deleteCollectionPreview(
-                    collectionId,
-                    browserCollectionPreviewClient,
-                    browserCollectionDashboardClient,
-                  );
-                  router.replace('/');
-                } catch (reason) {
-                  setError(
-                    reason instanceof Error
-                      ? reason.message
-                      : 'Could not delete this collection. Please try again.',
-                  );
+                const result = await removeChipInAction(collectionId);
+                if (result.status === 'error') {
+                  setError(result.message);
+                  return;
                 }
+                router.replace('/');
               })
             }
           >

@@ -3,11 +3,17 @@ import type { ChipInId } from '@/domain/value-objects/chip-in-id.vo';
 import type { PaymentReceipt } from '@/domain/entities/payment-receipt.entity';
 import { ChipInNotFoundError } from '@/domain/errors/chip-in-not-found.error';
 import { PaymentReceiptNotFoundError } from '@/domain/errors/payment-receipt-not-found.error';
-import type { ChipInRepository } from '@/application/ports/repositories/chip-in.repository';
+import type {
+  ChipInDashboardRecord,
+  ChipInRepository,
+} from '@/application/ports/repositories/chip-in.repository';
+import type { DashboardPreferencesDto } from '@/application/ports/output/chip-in-dashboard.dto';
 
 interface StoredChipIn {
   chipIn: ChipIn;
   ownerToken: string;
+  preferences: DashboardPreferencesDto;
+  isActivated: boolean;
   receipts: PaymentReceipt[];
 }
 
@@ -20,8 +26,18 @@ interface StoredChipIn {
 export class InMemoryChipInRepository implements ChipInRepository {
   private readonly store = new Map<string, StoredChipIn>();
 
-  async save(chipIn: ChipIn, ownerToken: string): Promise<void> {
-    this.store.set(chipIn.id.toString(), { chipIn, ownerToken, receipts: [] });
+  async save(
+    chipIn: ChipIn,
+    ownerToken: string,
+    preferences: DashboardPreferencesDto,
+  ): Promise<void> {
+    this.store.set(chipIn.id.toString(), {
+      chipIn,
+      ownerToken,
+      preferences,
+      isActivated: false,
+      receipts: [],
+    });
   }
 
   async findById(id: ChipInId): Promise<ChipIn | null> {
@@ -31,6 +47,53 @@ export class InMemoryChipInRepository implements ChipInRepository {
   async findReceiptById(chipInId: ChipInId, receiptId: string): Promise<PaymentReceipt | null> {
     const record = this.store.get(chipInId.toString());
     return record?.receipts.find((receipt) => receipt.id === receiptId) ?? null;
+  }
+
+  async findDashboardById(
+    id: ChipInId,
+    ownerToken: string,
+  ): Promise<ChipInDashboardRecord | null> {
+    const record = this.store.get(id.toString());
+    if (!record || record.ownerToken !== ownerToken) return null;
+    return { chipIn: record.chipIn, preferences: record.preferences, isActivated: record.isActivated };
+  }
+
+  async findManyActivatedByOwnerToken(ownerToken: string): Promise<ChipInDashboardRecord[]> {
+    return [...this.store.values()]
+      .filter((record) => record.ownerToken === ownerToken && record.isActivated)
+      .map((record) => ({
+        chipIn: record.chipIn,
+        preferences: record.preferences,
+        isActivated: record.isActivated,
+      }));
+  }
+
+  async savePreferences(
+    id: ChipInId,
+    ownerToken: string,
+    preferences: DashboardPreferencesDto,
+  ): Promise<void> {
+    const record = this.store.get(id.toString());
+    if (!record || record.ownerToken !== ownerToken) throw new ChipInNotFoundError();
+    record.preferences = preferences;
+  }
+
+  async activate(id: ChipInId, ownerToken: string): Promise<void> {
+    const record = this.store.get(id.toString());
+    if (!record || record.ownerToken !== ownerToken) throw new ChipInNotFoundError();
+    record.isActivated = true;
+  }
+
+  async updateSettings(chipIn: ChipIn, ownerToken: string): Promise<void> {
+    const record = this.store.get(chipIn.id.toString());
+    if (!record || record.ownerToken !== ownerToken) throw new ChipInNotFoundError();
+    record.chipIn = chipIn;
+  }
+
+  async remove(id: ChipInId, ownerToken: string): Promise<void> {
+    const record = this.store.get(id.toString());
+    if (!record || record.ownerToken !== ownerToken) throw new ChipInNotFoundError();
+    this.store.delete(id.toString());
   }
 
   async submitPayment(

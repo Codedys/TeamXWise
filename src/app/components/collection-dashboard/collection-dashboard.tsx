@@ -3,8 +3,7 @@ import Link from 'next/link';
 import QRCode from 'react-qr-code';
 import { useEffect, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { browserCollectionDashboardClient } from './browser-collection-dashboard-client';
-import { browserCollectionPreviewClient } from '../collection-preview/browser-collection-preview-client';
+import { getChipInDashboardAction, saveDashboardPreferencesAction } from '@/app/actions';
 import type { CollectionDashboard as Dashboard } from './collection-dashboard-client';
 import { DeleteCollectionButton } from './delete-collection-button';
 import { dashboardModel, initials } from './collection-dashboard-model';
@@ -39,7 +38,6 @@ export function CollectionDashboard({
   const [manageStart, setManageStart] = useState<string | undefined>();
   const [finishPreview, setFinishPreview] = useState(false);
   const [url, setUrl] = useState('');
-  const [clock, setClock] = useState(0);
   const [ringPct, setRingPct] = useState(0);
   const [peopleRef] = useAutoAnimate({ duration: 200 });
   useEffect(() => {
@@ -49,22 +47,26 @@ export function CollectionDashboard({
     return () => clearTimeout(t);
   }, [collection]);
   useEffect(() => {
-    const refresh = () => {
-      setCollection(browserCollectionDashboardClient.get(collectionId));
-      setLoaded(true);
-      setClock(Date.now());
-      setUrl(
-        new URL(`/chip-in/pay/${encodeURIComponent(collectionId)}`, window.location.origin)
-          .href,
-      );
-    };
-    // Reading prunes expired payment tokens; aggregate mock summaries remain.
-    void browserCollectionPreviewClient.get(collectionId).then(refresh);
-    const owner = browserCollectionDashboardClient.subscribe(refresh);
-    const payments = browserCollectionPreviewClient.subscribe(refresh);
+    let active = true;
+    const refresh = () =>
+      void getChipInDashboardAction(collectionId)
+        .then((result) => {
+          if (!active) return;
+          setCollection(result);
+          setLoaded(true);
+          setUrl(
+            new URL(`/chip-in/pay/${encodeURIComponent(collectionId)}`, window.location.origin)
+              .href,
+          );
+        })
+        .catch(() => {
+          if (active) setLoaded(true);
+        });
+    refresh();
+    const timer = setInterval(refresh, 2500);
     return () => {
-      owner();
-      payments();
+      active = false;
+      clearInterval(timer);
     };
   }, [collectionId]);
   if (!loaded)
@@ -86,12 +88,11 @@ export function CollectionDashboard({
     ? shortDeadline(collection.deadline)
     : 'No closing date';
   const daysLeft = collection.deadline
-    ? Math.max(0, daysUntilDate(collection.deadline, localDateInput(new Date(clock))))
+    ? Math.max(0, daysUntilDate(collection.deadline, localDateInput()))
     : null;
   const active =
     collection.isOpen &&
     collection.status === 'active' &&
-    clock < collection.expiresAt &&
     (!collection.deadline || localDateInput() <= collection.deadline);
   const filtered = model.people.filter(
     (person) =>
@@ -99,12 +100,8 @@ export function CollectionDashboard({
       person.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
   );
   const visible = search ? filtered : filtered.slice(0, 8);
-  const tokenAvailable = collection.status === 'active' && clock < collection.expiresAt;
-  const nextReminder = nextReminderDate(
-    collection.preferences,
-    collection.deadline,
-    localDateInput(new Date(clock)),
-  );
+  const tokenAvailable = collection.status === 'active';
+  const nextReminder = nextReminderDate(collection.preferences, collection.deadline, localDateInput());
   const answers = model.people.filter((person) => person.paid && person.answer);
   function openReminders(id?: string) {
     setPersonId(id);
@@ -114,30 +111,25 @@ export function CollectionDashboard({
     setManageStart(start);
     setPanel('manage');
   }
-  function saveException() {
-    try {
-      browserCollectionDashboardClient.savePreferences(collectionId, {
-        ...collection!.preferences,
-        exceptionResolved: true,
-      });
-      setNotice('Sample payment reviewed. No real payment was changed.');
-    } catch (reason) {
-      setNotice(reason instanceof Error ? reason.message : 'Could not save the change.');
-    }
+  async function saveException() {
+    const result = await saveDashboardPreferencesAction(collectionId, {
+      ...collection!.preferences,
+      exceptionResolved: true,
+    });
+    setNotice(
+      result.status === 'error'
+        ? result.message
+        : 'Sample payment reviewed. No real payment was changed.',
+    );
   }
-  function keepCompletion() {
+  async function keepCompletion() {
     setFinishPreview(false);
     if (collection!.status === 'complete') {
-      try {
-        browserCollectionDashboardClient.savePreferences(collectionId, {
-          ...collection!.preferences,
-          completionDismissed: true,
-        });
-      } catch (reason) {
-        setNotice(
-          reason instanceof Error ? reason.message : 'Could not save dashboard settings.',
-        );
-      }
+      const result = await saveDashboardPreferencesAction(collectionId, {
+        ...collection!.preferences,
+        completionDismissed: true,
+      });
+      if (result.status === 'error') setNotice(result.message);
     }
   }
   if (
@@ -149,7 +141,7 @@ export function CollectionDashboard({
         <CollectionCompletion
           collection={collection}
           preview={finishPreview && collection.status !== 'complete'}
-          onKeep={keepCompletion}
+          onKeep={() => void keepCompletion()}
         />
         <p role="status">{notice}</p>
       </main>
@@ -205,11 +197,10 @@ export function CollectionDashboard({
           {!active && (
             <p className={styles.closed}>
               {collection.status === 'complete'
-                ? 'Collection complete. Temporary payment data has been deleted.'
-                : !tokenAvailable
-                  ? 'Demo link expired. Temporary payment data has been deleted.'
-                  : 'The organiser has paused this payment link.'}{' '}
-              This mock dashboard summary is retained.
+                ? 'Collection complete.'
+                : collection.deadline && localDateInput() > collection.deadline
+                  ? 'This collection has closed.'
+                  : 'The organiser has paused this payment link.'}
             </p>
           )}
         </div>
@@ -385,10 +376,10 @@ export function CollectionDashboard({
                 </div>
               )}
               <div className={styles.smallActions}>
-                <button className={styles.dark} onClick={saveException}>
+                <button className={styles.dark} onClick={() => void saveException()}>
                   {model.group ? "It's Laura" : 'Yes, add Helen'}
                 </button>
-                <button onClick={saveException}>Not related</button>
+                <button onClick={() => void saveException()}>Not related</button>
               </div>
             </section>
           )}
@@ -554,7 +545,8 @@ export function CollectionDashboard({
       </div>
 
       <p className={styles.demoNote}>
-        Sample statistics and fictional activity. Demo payments update the totals locally.
+        Sample statistics and fictional activity blended in for display. Real demo payments
+        update the totals shown here.
       </p>
 
       <DeleteCollectionButton collectionId={collectionId} />

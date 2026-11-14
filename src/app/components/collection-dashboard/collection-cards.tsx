@@ -1,23 +1,29 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { browserCollectionDashboardClient } from './browser-collection-dashboard-client';
+import { listOwnerChipInsAction } from '@/app/actions';
 import type { CollectionDashboard } from './collection-dashboard-client';
-import { browserCollectionPreviewClient } from '../collection-preview/browser-collection-preview-client';
 import { displayMoney } from '../create-collection/create-collection-draft';
 import { dashboardModel } from './collection-dashboard-model';
 import styles from './collection-dashboard.module.css';
 
+const POLL_INTERVAL_MS = 2500;
+
 export function CollectionCards() {
   const [collections, setCollections] = useState<CollectionDashboard[]>([]);
   useEffect(() => {
-    const refresh = () => setCollections(browserCollectionDashboardClient.list());
+    let active = true;
+    const refresh = () =>
+      void listOwnerChipInsAction()
+        .then((result) => {
+          if (active) setCollections(result);
+        })
+        .catch(() => {});
     refresh();
-    const owner = browserCollectionDashboardClient.subscribe(refresh);
-    const payments = browserCollectionPreviewClient.subscribe(refresh);
+    const timer = setInterval(refresh, POLL_INTERVAL_MS);
     return () => {
-      owner();
-      payments();
+      active = false;
+      clearInterval(timer);
     };
   }, []);
   if (!collections.length) return null;
@@ -52,11 +58,9 @@ export function CollectionCards() {
               <small>
                 {collection.status === 'complete'
                   ? 'Complete'
-                  : collection.status === 'expired'
-                    ? 'Link expired'
-                    : !collection.isOpen
-                      ? 'Link paused'
-                      : 'View dashboard'}{' '}
+                  : !collection.isOpen
+                    ? 'Link paused'
+                    : 'View dashboard'}{' '}
                 · sample statistics
               </small>
             </Link>

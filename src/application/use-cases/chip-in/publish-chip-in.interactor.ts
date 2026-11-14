@@ -8,6 +8,7 @@ import type {
   PublishChipInRequest,
 } from '@/application/ports/input/publish-chip-in.input-port';
 import type { PublishChipInOutputPort } from '@/application/ports/output/publish-chip-in.output-port';
+import { defaultDashboardPreferencesDto } from '@/application/ports/output/chip-in-dashboard.dto';
 import type { ChipInRepository } from '@/application/ports/repositories/chip-in.repository';
 import { toChipInResponse } from './chip-in.mapper';
 
@@ -43,7 +44,7 @@ export class PublishChipInInteractor implements PublishChipInInputPort {
         progress: { paidSpots: 0, receivedMinorUnits: 0 },
         createdAt: request.createdAt,
       });
-      await this.repository.save(chipIn, request.ownerToken);
+      await this.repository.save(chipIn, request.ownerToken, defaultDashboardPreferencesDto());
       this.outputPort.presentSuccess(toChipInResponse(chipIn));
     } catch (error) {
       if (error instanceof DomainError) {

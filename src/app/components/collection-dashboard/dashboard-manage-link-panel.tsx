@@ -1,9 +1,7 @@
 'use client';
 import { useState, type ReactNode } from 'react';
 import type { CollectionDashboard } from './collection-dashboard-client';
-import type { CollectionLinkSettings } from '../collection-preview/collection-preview-client';
-import { browserCollectionPreviewClient } from '../collection-preview/browser-collection-preview-client';
-import { browserCollectionDashboardClient } from './browser-collection-dashboard-client';
+import { configureChipInLinkAction, saveDashboardPreferencesAction } from '@/app/actions';
 import { dashboardModel } from './collection-dashboard-model';
 import { DashboardDialog } from './dashboard-dialog';
 import {
@@ -60,25 +58,32 @@ export function DashboardManageLinkPanel({
       setStatus('Choose a goal above the amount already collected.');
       return;
     }
-    const settings: CollectionLinkSettings = {
-      isOpen: closeNow ? false : isOpen,
-      deadline: deadline || null,
-      priceMinorUnits: priceMinorUnits ?? collection.priceMinorUnits,
-      limitType: limit,
-      spotLimit: Number(spots) || collection.spotLimit,
-      goalMinorUnits: goalMinorUnits ?? collection.goalMinorUnits,
-      customQuestion: question.trim() || null,
-    };
     setBusy(true);
     try {
-      if (editable) await browserCollectionPreviewClient.configure(collection.id, settings);
-      browserCollectionDashboardClient.savePreferences(collection.id, {
+      if (editable) {
+        const result = await configureChipInLinkAction(collection.id, {
+          isOpen: closeNow ? false : isOpen,
+          deadline: deadline || null,
+          price,
+          limitType: limit,
+          spotLimit: spots,
+          goalAmount: goal,
+          customQuestion: question.trim() || null,
+        });
+        if (result.status === 'error') {
+          setStatus(result.message);
+          return;
+        }
+      }
+      const saved = await saveDashboardPreferencesAction(collection.id, {
         ...collection.preferences,
         cohosts,
       });
+      if (saved.status === 'error') {
+        setStatus(saved.message);
+        return;
+      }
       onClose();
-    } catch (reason) {
-      setStatus(reason instanceof Error ? reason.message : 'Could not save link settings.');
     } finally {
       setBusy(false);
     }
@@ -128,7 +133,7 @@ export function DashboardManageLinkPanel({
       </div>
       {!editable && (
         <p className={styles.warning}>
-          This demo link is expired or complete. Its payment data has been deleted. Co-host
+          This collection is complete, so link settings can no longer be changed. Co-host
           display settings can still be updated.
         </p>
       )}
@@ -312,10 +317,6 @@ export function DashboardManageLinkPanel({
       </footer>
       <p role="status" className={styles.status}>
         {status}
-      </p>
-      <p className={styles.help}>
-        Settings apply to this browser’s demo. The original one-hour link expiry stays in
-        place.
       </p>
     </DashboardDialog>
   );

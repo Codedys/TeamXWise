@@ -174,6 +174,65 @@ export class ChipIn {
     return null;
   }
 
+  /** Whether every spot/the goal/every named participant has been paid for. */
+  isComplete(): boolean {
+    if (this.props.audience === 'group') {
+      return (
+        this.props.participants.length > 0 &&
+        this.props.participants.every((person) => person.status === 'paid')
+      );
+    }
+    return (
+      (this.props.limitType === 'spots' &&
+        this.props.progress.paidSpots >= this.props.spotLimit) ||
+      (this.props.limitType === 'goal' &&
+        this.props.progress.receivedMinorUnits >= this.props.goal.minorUnits)
+    );
+  }
+
+  /** Only 'anyone' links are editable after publishing — a group's names/price are fixed. */
+  reconfigure(settings: {
+    isOpen: boolean;
+    deadline: string | null;
+    price: Money;
+    limitType: ChipInLimitType;
+    spotLimit: number;
+    goal: Money;
+    customQuestion: string | null;
+    today: string;
+  }): ChipIn {
+    if (this.props.audience !== 'anyone') {
+      throw new InvalidContributionError('Link settings are only available for open collections.');
+    }
+    if (settings.price.minorUnits < this.props.price.minorUnits) {
+      throw new InvalidContributionError('The price can only be raised for new payers.');
+    }
+    if (settings.deadline && settings.deadline < settings.today) {
+      throw new InvalidContributionError('Choose today or a later closing date.');
+    }
+    if (settings.limitType === 'spots' && settings.spotLimit <= this.props.progress.paidSpots) {
+      throw new InvalidContributionError(
+        'Leave at least one spot beyond the people who have already paid.',
+      );
+    }
+    if (
+      settings.limitType === 'goal' &&
+      settings.goal.minorUnits <= this.props.progress.receivedMinorUnits
+    ) {
+      throw new InvalidContributionError('The goal must be above the amount already collected.');
+    }
+    return new ChipIn({
+      ...this.props,
+      isOpen: settings.isOpen,
+      deadline: settings.deadline,
+      price: settings.price,
+      limitType: settings.limitType,
+      spotLimit: settings.spotLimit,
+      goal: settings.goal,
+      customQuestion: settings.customQuestion,
+    });
+  }
+
   /** Demo currency conversion — illustrative only, mirrors the fixed `DEMO_FX_RATES`. */
   quote(currency: string, quantity: number): ContributionQuote {
     if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1_000_000) {

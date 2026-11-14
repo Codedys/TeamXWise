@@ -2,6 +2,8 @@ import type { ChipIn } from '@/domain/entities/chip-in.entity';
 import type { PaymentReceipt } from '@/domain/entities/payment-receipt.entity';
 import type { ChipInResponse } from '@/application/ports/output/chip-in.dto';
 import type { PaymentReceiptResponse } from '@/application/ports/output/payment-receipt.dto';
+import type { ChipInDashboardResponse } from '@/application/ports/output/chip-in-dashboard.dto';
+import type { ChipInDashboardRecord } from '@/application/ports/repositories/chip-in.repository';
 
 /** Maps the aggregate to its plain response DTO — shared by every chip-in use case. */
 export function toChipInResponse(chipIn: ChipIn): ChipInResponse {
@@ -27,6 +29,17 @@ export function toChipInResponse(chipIn: ChipIn): ChipInResponse {
       status: participant.status,
     })),
     progress: chipIn.progress,
+  };
+}
+
+export function toChipInDashboardResponse(
+  record: ChipInDashboardRecord,
+): ChipInDashboardResponse {
+  return {
+    ...toChipInResponse(record.chipIn),
+    preferences: record.preferences,
+    isActivated: record.isActivated,
+    status: record.chipIn.isComplete() ? 'complete' : 'active',
   };
 }
 

@@ -21,8 +21,6 @@ const fixture = (changes: Partial<CollectionDashboard> = {}): CollectionDashboar
   customQuestion: null,
   paidCount: 0,
   collectedMinorUnits: 0,
-  expiresAt: 123,
-  visible: true,
   status: 'active',
   ...changes,
 });

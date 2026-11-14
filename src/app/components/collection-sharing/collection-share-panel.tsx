@@ -8,15 +8,12 @@ import {
   invitationPreview,
   type CreateCollectionDraft,
 } from '../create-collection/create-collection-draft';
-import { browserCollectionDashboardClient } from '../collection-dashboard/browser-collection-dashboard-client';
 import { publishChipInAction, getChipInPreviewAction } from '@/app/actions';
 import type { ChipInPreviewViewModel } from '@/adapters/presenters/chip-in-preview.view-model';
 import { shareCollectionLink, shareCollectionQr } from './share-collection';
 import styles from './collection-share-panel.module.css';
 
 const POLL_INTERVAL_MS = 2500;
-/** The dashboard still runs on its own browser-local store (migrating next); DB data never expires. */
-const DASHBOARD_BRIDGE_LIFETIME_MS = 365 * 24 * 60 * 60 * 1000;
 
 export function CollectionSharePanel({
   draft,
@@ -64,10 +61,6 @@ export function CollectionSharePanel({
           return;
         }
         setCollection(result.chipIn);
-        browserCollectionDashboardClient.remember(
-          result.chipIn,
-          Date.now() + DASHBOARD_BRIDGE_LIFETIME_MS,
-        );
         onPublished?.(result.chipIn.id);
         setUrl(
           new URL(`/chip-in/pay/${encodeURIComponent(result.chipIn.id)}`, window.location.origin)

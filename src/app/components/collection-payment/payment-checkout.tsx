@@ -6,7 +6,7 @@ import { evaluateOpenCollection } from '../create-collection/open-collection-rul
 import {
   previewClosedReason,
   previewRuleDraft,
-} from '../collection-preview/browser-collection-preview-client';
+} from './chip-in-preview-rules';
 import type {
   ChipInParticipantViewModel,
   ChipInPreviewViewModel,

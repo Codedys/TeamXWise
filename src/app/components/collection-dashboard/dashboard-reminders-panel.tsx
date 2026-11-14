@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { CollectionDashboard } from './collection-dashboard-client';
-import { browserCollectionDashboardClient } from './browser-collection-dashboard-client';
+import { saveDashboardPreferencesAction } from '@/app/actions';
 import { dashboardModel } from './collection-dashboard-model';
 import { REMINDER_LABELS, reminderDate, reminderPreview } from './dashboard-settings';
 import { DashboardDialog } from './dashboard-dialog';
@@ -35,7 +35,7 @@ export function DashboardRemindersPanel({
       unpaid.indexOf(person) >= Math.max(0, unpaid.length - 2),
   );
   const sample = selected ?? unpaid[0];
-  function save() {
+  async function save() {
     if (
       Object.values(preferences.contacts).some(
         (phone) => phone && !/^\+?[0-9 ()-]{5,25}$/.test(phone),
@@ -44,12 +44,12 @@ export function DashboardRemindersPanel({
       setStatus('Enter a valid phone number or leave it empty.');
       return;
     }
-    try {
-      browserCollectionDashboardClient.savePreferences(collection.id, preferences);
-      onClose();
-    } catch (reason) {
-      setStatus(reason instanceof Error ? reason.message : 'Could not save reminders.');
+    const result = await saveDashboardPreferencesAction(collection.id, preferences);
+    if (result.status === 'error') {
+      setStatus(result.message);
+      return;
     }
+    onClose();
   }
   return (
     <DashboardDialog title="Reminders" eyebrow={collection.title} onClose={onClose}>
@@ -185,10 +185,10 @@ export function DashboardRemindersPanel({
         </div>
       )}
       <p className={styles.help}>
-        Demo only. Schedules and contacts are saved locally; no texts or emails are sent.
+        Demo only. Schedules and contacts are saved, but no texts or emails are actually sent.
       </p>
       <footer className={styles.footer}>
-        <button type="button" className={styles.primary} onClick={save}>
+        <button type="button" className={styles.primary} onClick={() => void save()}>
           Save
         </button>
         <button

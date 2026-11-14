@@ -1,14 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import type { CollectionPreview } from '../collection-preview/collection-preview-client';
+import type { ChipInPreviewViewModel } from '@/adapters/presenters/chip-in-preview.view-model';
 import styles from './collection-payment.module.css';
 
 export function ParticipantPicker({
   collection,
   onPick,
 }: {
-  collection: CollectionPreview;
+  collection: ChipInPreviewViewModel;
   onPick: (id: string) => void;
 }) {
   const [search, setSearch] = useState('');
@@ -52,9 +52,7 @@ export function ParticipantPicker({
       <p className={styles.help}>
         Can’t find the name? Ask {collection.ownerName} to add it.
       </p>
-      <p className={styles.demoNote}>
-        Frontend demo · selecting a name does not verify anyone’s identity.
-      </p>
+      <p className={styles.demoNote}>Selecting a name does not verify anyone’s identity.</p>
     </>
   );
 }

@@ -10,6 +10,13 @@ import type { GetChipInPreviewViewModel } from '@/adapters/presenters/get-chip-i
 import type { GetPaymentReceiptViewModel } from '@/adapters/presenters/get-payment-receipt.presenter';
 import type { SubmitPaymentViewModel } from '@/adapters/presenters/submit-payment.presenter';
 import type { ConfirmBankTransferViewModel } from '@/adapters/presenters/confirm-bank-transfer.presenter';
+import type { GetChipInDashboardViewModel } from '@/adapters/presenters/get-chip-in-dashboard.presenter';
+import type { ListOwnerChipInsViewModel } from '@/adapters/presenters/list-owner-chip-ins.presenter';
+import type { SaveDashboardPreferencesViewModel } from '@/adapters/presenters/save-dashboard-preferences.presenter';
+import type { DashboardPreferencesViewModel } from '@/adapters/presenters/chip-in-dashboard.view-model';
+import type { ActivateChipInDashboardViewModel } from '@/adapters/presenters/activate-chip-in-dashboard.presenter';
+import type { RemoveChipInViewModel } from '@/adapters/presenters/remove-chip-in.presenter';
+import type { ConfigureChipInLinkViewModel } from '@/adapters/presenters/configure-chip-in-link.presenter';
 import {
   getCreateCollectionController,
   getListCollectionsController,
@@ -18,6 +25,12 @@ import {
   getGetPaymentReceiptController,
   getSubmitPaymentController,
   getConfirmBankTransferController,
+  getGetChipInDashboardController,
+  getListOwnerChipInsController,
+  getSaveDashboardPreferencesController,
+  getActivateChipInDashboardController,
+  getRemoveChipInController,
+  getConfigureChipInLinkController,
 } from '@/infrastructure/di/container';
 
 const OWNER_TOKEN_COOKIE = 'chip-in-owner-token';
@@ -128,4 +141,62 @@ export async function confirmBankTransferAction(
 ): Promise<ConfirmBankTransferViewModel> {
   const controller = getConfirmBankTransferController();
   return controller.handle({ chipInId, receiptId });
+}
+
+export async function getChipInDashboardAction(id: string): Promise<GetChipInDashboardViewModel> {
+  const ownerToken = await getOrCreateOwnerToken();
+  const controller = getGetChipInDashboardController();
+  return controller.handle({ id, ownerToken });
+}
+
+export async function listOwnerChipInsAction(): Promise<ListOwnerChipInsViewModel> {
+  const ownerToken = await getOrCreateOwnerToken();
+  const controller = getListOwnerChipInsController();
+  return controller.handle({ ownerToken });
+}
+
+export async function saveDashboardPreferencesAction(
+  id: string,
+  preferences: DashboardPreferencesViewModel,
+): Promise<SaveDashboardPreferencesViewModel> {
+  const ownerToken = await getOrCreateOwnerToken();
+  const controller = getSaveDashboardPreferencesController();
+  return controller.handle({ id, ownerToken, preferences });
+}
+
+export async function activateChipInDashboardAction(
+  id: string,
+): Promise<ActivateChipInDashboardViewModel> {
+  const ownerToken = await getOrCreateOwnerToken();
+  const controller = getActivateChipInDashboardController();
+  const viewModel = await controller.handle({ id, ownerToken });
+  if (viewModel.status === 'success') revalidatePath('/');
+  return viewModel;
+}
+
+export async function removeChipInAction(id: string): Promise<RemoveChipInViewModel> {
+  const ownerToken = await getOrCreateOwnerToken();
+  const controller = getRemoveChipInController();
+  const viewModel = await controller.handle({ id, ownerToken });
+  if (viewModel.status === 'success') revalidatePath('/');
+  return viewModel;
+}
+
+export interface ConfigureChipInLinkActionInput {
+  isOpen: boolean;
+  deadline: string | null;
+  price: string;
+  limitType: 'none' | 'spots' | 'goal';
+  spotLimit: string;
+  goalAmount: string;
+  customQuestion: string | null;
+}
+
+export async function configureChipInLinkAction(
+  id: string,
+  input: ConfigureChipInLinkActionInput,
+): Promise<ConfigureChipInLinkViewModel> {
+  const ownerToken = await getOrCreateOwnerToken();
+  const controller = getConfigureChipInLinkController();
+  return controller.handle({ id, ownerToken, ...input });
 }
