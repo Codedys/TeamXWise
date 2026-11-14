@@ -5,6 +5,7 @@ import { browserCollectionDashboardClient } from '../collection-dashboard/browse
 import { CollectionSharePanel } from '../collection-sharing/collection-share-panel';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition, type FormEvent } from 'react';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import {
   COLLECTION_STEP,
   collectionSteps,
@@ -47,6 +48,7 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
   const [publishedId, setPublishedId] = useState<string | null>(null);
   const [errors, setErrors] = useState<DraftErrors>({});
   const [cancelling, startCancelTransition] = useTransition();
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
   const [cancelError, setCancelError] = useState('');
   const headingRef = useRef<HTMLHeadingElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -97,6 +99,7 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
     requestAnimationFrame(() => headingRef.current?.focus());
   }
   function changeStep(step: number) {
+    setStepDirection(step > draft.step ? 1 : -1);
     setErrors({});
     updateCollectionDraft((previous) => ({
       ...previous,
@@ -385,7 +388,14 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
     );
   }
 
+  const stepVariants = {
+    enter: (dir: number) => ({ opacity: 0, x: dir * 28 }),
+    center: { opacity: 1, x: 0 },
+    exit: (dir: number) => ({ opacity: 0, x: dir * -20 }),
+  };
+
   return (
+    <MotionConfig reducedMotion="user">
     <main className={`${styles.screen} ${className}`}>
       <div className={styles.wizard}>
         <aside className={styles.sidebar} aria-label="Collection setup progress">
@@ -435,25 +445,37 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
                 Cancel
               </button>
             </div>
-            <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>
-              {heading}
-            </h1>
-            {renderStep()}
-            {cancelError && (
-              <p className={styles.error} role="alert">
-                {cancelError}
-              </p>
-            )}
-            {errors.names && draft.step !== COLLECTION_STEP.names && (
-              <p className={styles.error} role="alert">
-                {errors.names}
-              </p>
-            )}
-            {storageUnavailable && (
-              <p className={styles.help} role="status">
-                Browser storage is unavailable. Your draft will only last for this visit.
-              </p>
-            )}
+            <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
+              <motion.div
+                key={draft.step}
+                custom={stepDirection}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>
+                  {heading}
+                </h1>
+                {renderStep()}
+                {cancelError && (
+                  <p className={styles.error} role="alert">
+                    {cancelError}
+                  </p>
+                )}
+                {errors.names && draft.step !== COLLECTION_STEP.names && (
+                  <p className={styles.error} role="alert">
+                    {errors.names}
+                  </p>
+                )}
+                {storageUnavailable && (
+                  <p className={styles.help} role="status">
+                    Browser storage is unavailable. Your draft will only last for this visit.
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
           <div className={styles.actions}>
             {draft.step === 0 ? (
@@ -493,5 +515,6 @@ export function CreateCollectionWizard({ className = '' }: { className?: string 
         </form>
       </div>
     </main>
+    </MotionConfig>
   );
 }

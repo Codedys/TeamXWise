@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { motion, MotionConfig } from 'motion/react';
 import { displayMoney } from '../create-collection/create-collection-draft';
 import type {
   CollectionPreview,
@@ -54,24 +55,52 @@ export function PaymentResult({
         setError('Sharing is unavailable in this browser.');
     }
   }
+  const ease = [0.16, 1, 0.3, 1] as const;
+
   return (
-    <section className={`${styles.result} ${pending ? styles.pending : ''}`}>
-      <span className={styles.demoBadge}>FRONTEND DEMO · NO MONEY MOVED</span>
+    <MotionConfig reducedMotion="user">
+      <section className={`${styles.result} ${pending ? styles.pending : ''}`}>
+      <motion.span
+        className={styles.demoBadge}
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.1, ease }}
+      >
+        FRONTEND DEMO · NO MONEY MOVED
+      </motion.span>
       {pending ? (
-        <div className={styles.resultIcon} aria-hidden="true">
+        <motion.div
+          className={styles.resultIcon}
+          aria-hidden="true"
+          initial={{ opacity: 0, scale: 0.4, y: 48, rotate: -30 }}
+          animate={{ opacity: 1, scale: 1, y: 0, rotate: -8 }}
+          transition={{ duration: 0.6, delay: 0.18, type: 'spring', stiffness: 220, damping: 18 }}
+        >
           ↗
-        </div>
+        </motion.div>
       ) : (
-        <Image
-          src="/images/chip-in-success.png"
-          sizes="310px"
-          width={1426}
-          height={1103}
-          className={styles.successArtwork}
-          alt=""
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 32, scale: 0.88 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, delay: 0.18, type: 'spring', stiffness: 200, damping: 22 }}
+        >
+          <Image
+            src="/images/chip-in-success.png"
+            sizes="310px"
+            width={1426}
+            height={1103}
+            className={styles.successArtwork}
+            alt=""
+          />
+        </motion.div>
       )}
-      <h1>{pending ? 'TRANSFER PENDING.' : 'BOOM. CHIPPED IN.'}</h1>
+      <motion.h1
+        initial={{ opacity: 0, y: 20, scale: 0.94 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.3, type: 'spring', stiffness: 240, damping: 20 }}
+      >
+        {pending ? 'TRANSFER PENDING.' : 'BOOM. CHIPPED IN.'}
+      </motion.h1>
       <p>
         {pending
           ? 'A bank transfer stays pending until its payment provider confirms it.'
@@ -116,6 +145,7 @@ export function PaymentResult({
             Send the link to a friend
           </button>
         ))}
-    </section>
+      </section>
+    </MotionConfig>
   );
 }

@@ -21,9 +21,14 @@
 .screen a {
   -webkit-tap-highlight-color: transparent;
 }
-.screen :is(button, a, input, select, textarea):focus-visible {
-  outline: 3px solid #9fe870;
-  outline-offset: 4px;
+.screen :is(button, a):focus-visible {
+  outline: 2px solid #9fe870;
+  outline-offset: 3px;
+}
+.screen :is(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--forest) !important;
+  box-shadow: 0 0 0 4px rgba(22, 51, 0, 0.1);
 }
 .payerLayout {
   display: grid;
@@ -75,8 +80,6 @@
   margin-top: 8px;
   font-size: 11px;
   font-style: normal;
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
 .content {
   min-width: 0;
@@ -91,7 +94,6 @@
   color: var(--forest);
   font-size: 11px;
   font-weight: 750;
-  letter-spacing: 0.9px;
 }
 .heading {
   margin: 0 0 24px;
@@ -133,6 +135,9 @@
   background: #f7f8f5;
   cursor: default;
 }
+.person {
+  transition: background-color 0.2s ease;
+}
 .person:not(:disabled):hover {
   background: #e2f6d5;
 }
@@ -145,6 +150,7 @@
   border-radius: 16px;
   color: #163300;
   background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .help {
   margin: 18px 0;
@@ -193,6 +199,7 @@
   border-radius: 16px;
   color: #163300;
   background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .payerFields textarea {
   resize: vertical;
@@ -319,6 +326,7 @@
   background: var(--lime);
   font-weight: 750 !important;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 .secondary {
   padding: 0;
@@ -571,4 +579,12 @@
 }
 .payerFields label:has(textarea) {
   grid-column: 1 / -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person,
+  .primary,
+  .secondary {
+    transition: none;
+  }
 }

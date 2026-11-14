@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import type { CollectionPreview } from '../collection-preview/collection-preview-client';
 import styles from './collection-payment.module.css';
 
@@ -11,6 +12,7 @@ export function ParticipantPicker({
   onPick: (id: string) => void;
 }) {
   const [search, setSearch] = useState('');
+  const [gridRef] = useAutoAnimate({ duration: 150 });
   const people = collection.participants.filter((person) =>
     person.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   );
@@ -26,7 +28,7 @@ export function ParticipantPicker({
           onChange={(event) => setSearch(event.target.value)}
         />
       )}
-      <div className={styles.nameGrid}>
+      <div ref={gridRef} className={styles.nameGrid}>
         {people.map((person) => (
           <button
             key={person.id}

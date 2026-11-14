@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import QRCode from 'react-qr-code';
 import { useEffect, useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { browserCollectionDashboardClient } from './browser-collection-dashboard-client';
 import { browserCollectionPreviewClient } from '../collection-preview/browser-collection-preview-client';
 import type { CollectionDashboard as Dashboard } from './collection-dashboard-client';
@@ -39,6 +40,14 @@ export function CollectionDashboard({
   const [finishPreview, setFinishPreview] = useState(false);
   const [url, setUrl] = useState('');
   const [clock, setClock] = useState(0);
+  const [ringPct, setRingPct] = useState(0);
+  const [peopleRef] = useAutoAnimate({ duration: 200 });
+  useEffect(() => {
+    if (!collection) return;
+    const pct = dashboardModel(collection).percentage;
+    const t = setTimeout(() => setRingPct(pct !== null ? pct : 100), 60);
+    return () => clearTimeout(t);
+  }, [collection]);
   useEffect(() => {
     const refresh = () => {
       setCollection(browserCollectionDashboardClient.get(collectionId));
@@ -168,19 +177,19 @@ export function CollectionDashboard({
         <Link href="/">← Back to account</Link>
         <span className={styles.badge}>MOCK DASHBOARD</span>
       </div>
+
       <header className={styles.header}>
         <div>
           <h1>{collection.title}</h1>
           <p>
             {money(collection.priceMinorUnits)}{' '}
             {model.group
-              ? `each, ${collection.expectedCount} people`
-              : 'per person, anyone with the link'}{' '}
+              ? `each · ${collection.expectedCount} people`
+              : 'per person · anyone with the link'}{' '}
             · {model.group ? 'due' : 'closes'} {deadline}
           </p>
         </div>
         <div className={styles.actions}>
-          <button onClick={downloadList}>Download list</button>
           <button onClick={() => setPanel('share')}>Share link</button>
           <button
             className={styles.primary}
@@ -188,28 +197,26 @@ export function CollectionDashboard({
           >
             {model.group ? `Remind ${model.missing} people` : 'Manage link'}
           </button>
-          {model.group && (
-            <button type="button" onClick={() => setFinishPreview(true)}>
-              Preview finish
-            </button>
-          )}
         </div>
       </header>
-      <p className={styles.demoNote}>
-        Sample statistics and fictional activity. Demo payments update the totals locally; the
-        backend will supply live data.
-      </p>
-      {!active && (
-        <p className={styles.closed}>
-          {collection.status === 'complete'
-            ? 'Collection complete. Temporary payment data has been deleted.'
-            : !tokenAvailable
-              ? 'Demo link expired. Temporary payment data has been deleted.'
-              : 'The organiser has paused this payment link.'}{' '}
-          This mock dashboard summary is retained.
-        </p>
+
+      {(!active || collection.preferences.exceptionResolved === false) && (
+        <div className={styles.statusStrip}>
+          {!active && (
+            <p className={styles.closed}>
+              {collection.status === 'complete'
+                ? 'Collection complete. Temporary payment data has been deleted.'
+                : !tokenAvailable
+                  ? 'Demo link expired. Temporary payment data has been deleted.'
+                  : 'The organiser has paused this payment link.'}{' '}
+              This mock dashboard summary is retained.
+            </p>
+          )}
+        </div>
       )}
+
       <div className={styles.columns}>
+        {/* LEFT — progress metrics */}
         <div className={styles.stack}>
           <section
             className={`${styles.card} ${styles.progressCard}`}
@@ -217,12 +224,7 @@ export function CollectionDashboard({
           >
             <div
               className={styles.ring}
-              style={{
-                background:
-                  model.percentage === null
-                    ? '#9fe870'
-                    : `conic-gradient(#9fe870 ${model.percentage}%, #edf0e8 0)`,
-              }}
+              style={{ '--ring-pct': `${ringPct}%` } as React.CSSProperties}
             >
               <div>
                 <strong>{model.paid}</strong>
@@ -264,38 +266,8 @@ export function CollectionDashboard({
               </div>
             </dl>
           </section>
-          {model.group ? (
-            <section className={styles.card}>
-              <p>Collected for this trip</p>
-              <h2 className={styles.collected}>{money(model.total)}</h2>
-              <p>Keep the group’s payments organised in one place.</p>
-              <button
-                className={styles.dark}
-                onClick={() => noticeAction('Trip bill payment preview.')}
-              >
-                Pay the trip bill
-              </button>
-            </section>
-          ) : (
-            <section className={styles.card}>
-              <div className={styles.qrTeaser}>
-                <QRCode value={url || collection.id} size={74} fgColor="#163300" />
-                <div>
-                  <h3>Get more people in</h3>
-                  <p>Share the code on a poster or send the link again.</p>
-                </div>
-              </div>
-              <button
-                className={styles.dark}
-                disabled={!active}
-                onClick={() => setPanel('share')}
-              >
-                Share link & QR
-              </button>
-            </section>
-          )}
-        </div>
-        <div className={styles.stack}>
+
+          {/* Activity chart — non-group, lives in the metrics column */}
           {!model.group && (
             <section className={`${styles.card} ${styles.activity}`}>
               <div>
@@ -327,19 +299,114 @@ export function CollectionDashboard({
               </div>
             </section>
           )}
+
+          {/* Trip bill (group) / QR code (open) */}
+          {model.group ? (
+            <section className={styles.card}>
+              <p>Collected for this trip</p>
+              <h2 className={styles.collected}>{money(model.total)}</h2>
+              <p>Keep the group's payments organised in one place.</p>
+              <button
+                className={styles.dark}
+                onClick={() => noticeAction('Trip bill payment preview.')}
+              >
+                Pay the trip bill
+              </button>
+            </section>
+          ) : (
+            <section className={styles.card}>
+              <div className={styles.qrTeaser}>
+                <QRCode value={url || collection.id} size={74} fgColor="#163300" />
+                <div>
+                  <h3>Get more people in</h3>
+                  <p>Share the code on a poster or send the link again.</p>
+                </div>
+              </div>
+              <button
+                className={styles.dark}
+                disabled={!active}
+                onClick={() => setPanel('share')}
+              >
+                Share link & QR
+              </button>
+            </section>
+          )}
+
+          {/* Paid strip — group only, grouped with progress data */}
+          {model.group && (
+            <section className={`${styles.card} ${styles.paidStrip}`}>
+              <div className={styles.paidAvatars}>
+                {model.people
+                  .filter((person) => person.paid)
+                  .slice(0, 5)
+                  .map((person) => (
+                    <span key={person.id} className={styles.avatar}>
+                      {initials(person.name)}
+                    </span>
+                  ))}
+              </div>
+              <strong>{model.paid} people have already paid</strong>
+              <button
+                onClick={() => {
+                  setPeopleScope('paid');
+                  setSearch('');
+                  setPanel('people');
+                }}
+              >
+                See paid
+              </button>
+            </section>
+          )}
+        </div>
+
+        {/* CENTER — people & urgent items */}
+        <div className={styles.stack}>
+          {/* Exception alert — most urgent, always at top of center column */}
+          {!collection.preferences.exceptionResolved && (
+            <section className={`${styles.card} ${styles.exceptionCard}`}>
+              <h3>
+                Needs a look <small>1</small>
+              </h3>
+              <div className={styles.exception}>
+                <strong>Related to this event?</strong>
+                <div>
+                  <b>{model.group ? 'Märt Hein' : 'Helen Lepp'}</b>
+                  <b>+ {money(collection.priceMinorUnits)}</b>
+                </div>
+                <p>13 Nov, "{model.group ? 'Rome for Laura Kuusk' : 'party xx'}"</p>
+              </div>
+              {model.group && (
+                <div className={styles.suggestedMatch}>
+                  <span className={styles.avatar}>LK</span>
+                  <div>
+                    <strong>Probably Laura Kuusk</strong>
+                    <p>Named in the reference, same amount</p>
+                  </div>
+                </div>
+              )}
+              <div className={styles.smallActions}>
+                <button className={styles.dark} onClick={saveException}>
+                  {model.group ? 'It's Laura' : 'Yes, add Helen'}
+                </button>
+                <button onClick={saveException}>Not related</button>
+              </div>
+            </section>
+          )}
+
+          {/* People list */}
           <section className={styles.card}>
             {model.group && (
               <div className={styles.missing}>
                 <span className={styles.warning}>!</span>
                 <div>
                   <h3>Still missing</h3>
-                  <p>{model.missing} people haven’t paid</p>
+                  <p>{model.missing} people haven't paid</p>
                 </div>
                 <strong>{money(model.outstanding)}</strong>
               </div>
             )}
             <div className={styles.listHeader}>
-              <h3>{model.group ? 'Who still owes' : 'Who’s coming'}</h3>
+              <h3>{model.group ? 'Who still owes' : 'Who's coming'}</h3>
               <label>
                 <span className={styles.srOnly}>Find a name</span>
                 <input
@@ -349,7 +416,7 @@ export function CollectionDashboard({
                 />
               </label>
             </div>
-            <div className={`${styles.people} ${model.group ? styles.groupPeople : ''}`}>
+            <div ref={peopleRef} className={`${styles.people} ${model.group ? styles.groupPeople : ''}`}>
               {visible.map((person) => (
                 <div key={person.id} className={styles.person}>
                   <span className={styles.avatar}>{initials(person.name)}</span>
@@ -393,32 +460,9 @@ export function CollectionDashboard({
               </button>
             </div>
           </section>
-          {model.group && (
-            <section className={`${styles.card} ${styles.paidStrip}`}>
-              <div className={styles.paidAvatars}>
-                {model.people
-                  .filter((person) => person.paid)
-                  .slice(0, 5)
-                  .map((person) => (
-                    <span key={person.id} className={styles.avatar}>
-                      {initials(person.name)}
-                    </span>
-                  ))}
-              </div>
-              <strong>{model.paid} people have already paid</strong>
-              <button
-                onClick={() => {
-                  setPeopleScope('paid');
-                  setSearch('');
-                  setPanel('people');
-                }}
-              >
-                {' '}
-                See paid
-              </button>
-            </section>
-          )}
         </div>
+
+        {/* RIGHT — management & settings */}
         <div className={styles.stack}>
           {model.group && (
             <section className={styles.card}>
@@ -458,47 +502,7 @@ export function CollectionDashboard({
               <button onClick={() => openReminders()}>Manage reminders</button>
             </section>
           )}
-          {!collection.preferences.exceptionResolved && (
-            <section className={styles.card}>
-              <h3>
-                Needs a look <small>1</small>
-              </h3>
-              <div className={styles.exception}>
-                <strong>Related to this event?</strong>
-                <div>
-                  <b>{model.group ? 'Märt Hein' : 'Helen Lepp'}</b>
-                  <b>+ {money(collection.priceMinorUnits)}</b>
-                </div>
-                <p>13 Nov, “{model.group ? 'Rome for Laura Kuusk' : 'party xx'}”</p>
-              </div>
-              {model.group && (
-                <div className={styles.suggestedMatch}>
-                  <span className={styles.avatar}>LK</span>
-                  <div>
-                    <strong>Probably Laura Kuusk</strong>
-                    <p>Named in the reference, same amount</p>
-                  </div>
-                </div>
-              )}
-              <div className={styles.smallActions}>
-                <button
-                  className={styles.dark}
-                  onClick={() => {
-                    saveException();
-                  }}
-                >
-                  {model.group ? 'It’s Laura' : 'Yes, add Helen'}
-                </button>
-                <button
-                  onClick={() => {
-                    saveException();
-                  }}
-                >
-                  Not related
-                </button>
-              </div>
-            </section>
-          )}
+
           {!model.group && collection.customQuestion && (
             <section className={styles.card}>
               <p>You asked</p>
@@ -519,6 +523,7 @@ export function CollectionDashboard({
               <button onClick={() => setPanel('answers')}>See answers ›</button>
             </section>
           )}
+
           {!model.group && (
             <section className={`${styles.card} ${styles.cardTitle}`}>
               <span className={styles.avatar}>JD</span>
@@ -537,7 +542,23 @@ export function CollectionDashboard({
           )}
         </div>
       </div>
+
+      {/* Secondary actions — download, preview — demoted below the main grid */}
+      <div className={styles.secondaryRow}>
+        <button className={styles.textAction} onClick={downloadList}>Export CSV</button>
+        {model.group && (
+          <button type="button" className={styles.textAction} onClick={() => setFinishPreview(true)}>
+            Preview collection close
+          </button>
+        )}
+      </div>
+
+      <p className={styles.demoNote}>
+        Sample statistics and fictional activity. Demo payments update the totals locally.
+      </p>
+
       <DeleteCollectionButton collectionId={collectionId} />
+
       {panel === 'share' && (
         <DashboardShareDialog
           collection={collection}

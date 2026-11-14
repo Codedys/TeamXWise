@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { displayMoney, localDateInput } from '../create-collection/create-collection-draft';
 import { shortDeadline } from '../create-collection/calendar-date';
 import {
@@ -80,87 +81,138 @@ export function CollectionPayment({
     window.history.replaceState(null, '', window.location.pathname);
     void client.get(collectionId).then(setCollection);
   }
+  const ease = [0.16, 1, 0.3, 1] as const;
+
   if (!loaded)
     return (
       <main className={`${styles.screen} ${className}`}>
         <div className={styles.empty} role="status">
-          Opening Chip in preview…
+          Opening Chip in preview...
         </div>
       </main>
     );
-  if (
-    receipt &&
-    (collection || confirmationCollection) &&
-    (receipt.status === 'paid' || collection)
-  )
-    return (
-      <main className={`${styles.screen} ${className}`}>
-        <PaymentResult
-          collection={(collection ?? confirmationCollection)!}
-          receipt={receipt}
-          canPayMore={!!collection}
-          client={client}
-          onAnother={another}
-          onConfirmed={complete}
-        />
-      </main>
-    );
-  if (!collection || error)
+
+  const showReceipt =
+    !!receipt &&
+    !!(collection || confirmationCollection) &&
+    (receipt.status === 'paid' || !!collection);
+
+  if (!showReceipt && (!collection || error))
     return (
       <main className={`${styles.screen} ${className}`}>
         <div className={styles.empty}>
           <h1>Preview unavailable</h1>
           <p>
             {error ||
-              'This demo link has expired, everyone has paid, or it is not saved in this browser. The owner’s mock dashboard summary is kept separately.'}
+              "This demo link has expired, everyone has paid, or it is not saved in this browser. The owner's mock dashboard summary is kept separately."}
           </p>
           <Link href="/chip-in">Back to Chip in</Link>
         </div>
       </main>
     );
-  const participant = collection.participants.find((person) => person.id === selectedId);
-  const closed = previewClosedReason(collection, localDateInput());
+
+  const participant = collection?.participants.find((person) => person.id === selectedId);
+  const closed = collection ? previewClosedReason(collection, localDateInput()) : null;
+
   return (
-    <main className={`${styles.screen} ${className}`}>
-      <div className={styles.payerLayout}>
-        <aside className={styles.sidebar}>
-          <p>{collection.ownerName} invites you to Chip in for</p>
-          <h2>{collection.title}</h2>
-          <strong>
-            {displayMoney(collection.priceMinorUnits, collection.currency)} each
-            {collection.deadline ? `, due ${shortDeadline(collection.deadline)}` : ''}
-          </strong>
-          {collection.description && (
-            <p className={styles.occasionDescription}>{collection.description}</p>
-          )}
-          <span>
-            No app or account needed
-            <br />
-            <em>Frontend preview</em>
-          </span>
-        </aside>
-        <section className={styles.content}>
-          <span className={styles.demoBadge}>DEMO COLLECTION</span>
-          {closed ? (
-            <div className={styles.empty}>
-              <h1>{closed}</h1>
-              <p>New demo contributions are no longer available for this collection.</p>
-              <Link href="/chip-in">Back to Chip in</Link>
-            </div>
-          ) : collection.audience === 'group' && !participant ? (
-            <ParticipantPicker collection={collection} onPick={setSelectedId} />
+    <MotionConfig reducedMotion="user">
+      <main className={`${styles.screen} ${className}`} style={{ overflow: 'clip' }}>
+        <AnimatePresence mode="wait" initial={false}>
+          {showReceipt ? (
+            <motion.div
+              key="receipt"
+              style={{ width: '100%' }}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 260, damping: 32 }}
+            >
+              <PaymentResult
+                collection={(collection ?? confirmationCollection)!}
+                receipt={receipt!}
+                canPayMore={!!collection}
+                client={client}
+                onAnother={another}
+                onConfirmed={complete}
+              />
+            </motion.div>
           ) : (
-            <PaymentCheckout
-              key={participant?.id ?? 'open'}
-              collection={collection}
-              participant={participant}
-              client={client}
-              onBack={another}
-              onComplete={complete}
-            />
+            <motion.div
+              key="payer"
+              style={{ width: '100%' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ x: '-6%', opacity: 0 }}
+              transition={{ duration: 0.28, ease }}
+            >
+              <div className={styles.payerLayout}>
+                <aside className={styles.sidebar}>
+                  <p>{collection!.ownerName} invites you to Chip in for</p>
+                  <h2>{collection!.title}</h2>
+                  <strong>
+                    {displayMoney(collection!.priceMinorUnits, collection!.currency)} each
+                    {collection!.deadline ? `, due ${shortDeadline(collection!.deadline)}` : ''}
+                  </strong>
+                  {collection!.description && (
+                    <p className={styles.occasionDescription}>{collection!.description}</p>
+                  )}
+                  <span>
+                    No app or account needed
+                    <br />
+                    <em>Frontend preview</em>
+                  </span>
+                </aside>
+                <section className={styles.content}>
+                  <span className={styles.demoBadge}>DEMO COLLECTION</span>
+                  <AnimatePresence mode="wait" initial={false}>
+                    {closed ? (
+                      <motion.div
+                        key="closed"
+                        className={styles.empty}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.25, ease }}
+                      >
+                        <h1>{closed}</h1>
+                        <p>New demo contributions are no longer available for this collection.</p>
+                        <Link href="/chip-in">Back to Chip in</Link>
+                      </motion.div>
+                    ) : collection!.audience === 'group' && !participant ? (
+                      <motion.div
+                        key="pick"
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -12 }}
+                        transition={{ duration: 0.3, ease }}
+                      >
+                        <ParticipantPicker collection={collection!} onPick={setSelectedId} />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key={`checkout-${participant?.id ?? 'open'}`}
+                        initial={{ opacity: 0, x: 12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 12 }}
+                        transition={{ duration: 0.3, ease }}
+                      >
+                        <PaymentCheckout
+                          key={participant?.id ?? 'open'}
+                          collection={collection!}
+                          participant={participant}
+                          client={client}
+                          onBack={another}
+                          onComplete={complete}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </section>
+              </div>
+            </motion.div>
           )}
-        </section>
-      </div>
-    </main>
+        </AnimatePresence>
+      </main>
+    </MotionConfig>
   );
 }

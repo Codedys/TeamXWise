@@ -26,12 +26,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 .screen button:focus-visible,
-.screen a:focus-visible,
+.screen a:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 3px;
+}
 .screen input:focus-visible,
 .screen textarea:focus-visible,
 .screen select:focus-visible {
-  outline: 3px solid var(--forest);
-  outline-offset: 4px;
+  outline: none;
+  border-color: var(--forest) !important;
+  box-shadow: 0 0 0 4px rgba(22, 51, 0, 0.1);
 }
 .wizard {
   display: grid;
@@ -143,6 +147,7 @@
 .formContent {
   width: 100%;
   max-width: 1000px;
+  overflow: clip;
 }
 .stepCount {
   margin: 0;
@@ -218,6 +223,7 @@
   color: var(--forest);
   font-size: 20px !important;
   line-height: 1.5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .input {
   min-height: 72px;

@@ -55,8 +55,6 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 24px;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
 }
 
 .title {
@@ -115,8 +113,6 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: var(--bright);
-  color: var(--forest);
 }
 
 .feature p {
@@ -143,6 +139,7 @@
   font-weight: 700;
   line-height: 28px;
   text-decoration: none;
+  transition: background-color 0.2s ease;
 }
 
 .startButton:hover {
@@ -239,4 +236,10 @@
     font-size: 18px;
   }
 
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startButton {
+    transition: none;
+  }
 }
