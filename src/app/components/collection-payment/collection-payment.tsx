@@ -4,48 +4,47 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { displayMoney, localDateInput } from '../create-collection/create-collection-draft';
 import { shortDeadline } from '../create-collection/calendar-date';
-import {
-  browserCollectionPreviewClient,
-  previewClosedReason,
-} from '../collection-preview/browser-collection-preview-client';
-import type {
-  CollectionPreview,
-  CollectionPreviewClient,
-  PaymentReceiptPreview,
-} from '../collection-preview/collection-preview-client';
+import { previewClosedReason } from '../collection-preview/browser-collection-preview-client';
+import type { ChipInPreviewViewModel } from '@/adapters/presenters/chip-in-preview.view-model';
+import type { PaymentReceiptViewModel } from '@/adapters/presenters/payment-receipt.view-model';
+import { getChipInPreviewAction, getPaymentReceiptAction } from '@/app/actions';
 import { ParticipantPicker } from './participant-picker';
 import { PaymentCheckout } from './payment-checkout';
 import { PaymentResult } from './payment-result';
 import styles from './collection-payment.module.css';
 
+const POLL_INTERVAL_MS = 2500;
+
 export function CollectionPayment({
   collectionId,
   className = '',
-  client = browserCollectionPreviewClient,
 }: {
   collectionId: string;
   className?: string;
-  client?: CollectionPreviewClient;
 }) {
-  const [collection, setCollection] = useState<CollectionPreview | null>(null);
+  const [collection, setCollection] = useState<ChipInPreviewViewModel | null>(null);
   const [confirmationCollection, setConfirmationCollection] =
-    useState<CollectionPreview | null>(null);
+    useState<ChipInPreviewViewModel | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<PaymentReceiptPreview | null>(null);
+  const [receipt, setReceipt] = useState<PaymentReceiptViewModel | null>(null);
   useEffect(() => {
     let active = true;
+    let hasLoaded = false;
     async function refresh() {
       try {
-        const result = await client.get(collectionId);
+        const result = await getChipInPreviewAction(collectionId);
         if (active) {
           setCollection(result);
+          setError('');
           setLoaded(true);
+          hasLoaded = true;
         }
-      } catch (reason) {
-        if (active) {
-          setError(reason instanceof Error ? reason.message : 'Could not load the preview.');
+      } catch {
+        // A transient poll failure keeps showing the last good state; only the first load reports an error.
+        if (active && !hasLoaded) {
+          setError('Could not load this link right now.');
           setLoaded(true);
         }
       }
@@ -53,19 +52,16 @@ export function CollectionPayment({
     void refresh();
     const receiptId = new URLSearchParams(window.location.hash.slice(1)).get('receipt');
     if (receiptId)
-      void client
-        .receipt(collectionId, receiptId)
-        .then((result) => {
-          if (active) setReceipt(result);
-        })
-        .catch(() => {});
-    const unsubscribe = client.subscribe(() => void refresh());
+      void getPaymentReceiptAction(collectionId, receiptId).then((result) => {
+        if (active) setReceipt(result);
+      });
+    const timer = setInterval(() => void refresh(), POLL_INTERVAL_MS);
     return () => {
       active = false;
-      unsubscribe();
+      clearInterval(timer);
     };
-  }, [client, collectionId]);
-  function complete(result: PaymentReceiptPreview) {
+  }, [collectionId]);
+  function complete(result: PaymentReceiptViewModel) {
     setConfirmationCollection(collection ?? confirmationCollection);
     setReceipt(result);
     window.history.replaceState(
@@ -73,13 +69,17 @@ export function CollectionPayment({
       '',
       `${window.location.pathname}#receipt=${encodeURIComponent(result.id)}`,
     );
-    void client.get(collectionId).then(setCollection);
+    void getChipInPreviewAction(collectionId)
+      .then(setCollection)
+      .catch(() => {});
   }
   function another() {
     setReceipt(null);
     setSelectedId(null);
     window.history.replaceState(null, '', window.location.pathname);
-    void client.get(collectionId).then(setCollection);
+    void getChipInPreviewAction(collectionId)
+      .then(setCollection)
+      .catch(() => {});
   }
   const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -101,10 +101,10 @@ export function CollectionPayment({
     return (
       <main className={`${styles.screen} ${className}`}>
         <div className={styles.empty}>
-          <h1>Preview unavailable</h1>
+          <h1>Link unavailable</h1>
           <p>
             {error ||
-              "This demo link has expired, everyone has paid, or it is not saved in this browser. The owner's mock dashboard summary is kept separately."}
+              "This link has expired, everyone has paid, or the collection doesn't exist. The owner's dashboard summary is kept separately."}
           </p>
           <Link href="/chip-in">Back to Chip in</Link>
         </div>
@@ -131,7 +131,6 @@ export function CollectionPayment({
                 collection={(collection ?? confirmationCollection)!}
                 receipt={receipt!}
                 canPayMore={!!collection}
-                client={client}
                 onAnother={another}
                 onConfirmed={complete}
               />
@@ -156,14 +155,9 @@ export function CollectionPayment({
                   {collection!.description && (
                     <p className={styles.occasionDescription}>{collection!.description}</p>
                   )}
-                  <span>
-                    No app or account needed
-                    <br />
-                    <em>Frontend preview</em>
-                  </span>
+                  <span>No app or account needed</span>
                 </aside>
                 <section className={styles.content}>
-                  <span className={styles.demoBadge}>DEMO COLLECTION</span>
                   <AnimatePresence mode="wait" initial={false}>
                     {closed ? (
                       <motion.div
@@ -175,7 +169,7 @@ export function CollectionPayment({
                         transition={{ duration: 0.25, ease }}
                       >
                         <h1>{closed}</h1>
-                        <p>New demo contributions are no longer available for this collection.</p>
+                        <p>New contributions are no longer available for this collection.</p>
                         <Link href="/chip-in">Back to Chip in</Link>
                       </motion.div>
                     ) : collection!.audience === 'group' && !participant ? (
@@ -200,7 +194,6 @@ export function CollectionPayment({
                           key={participant?.id ?? 'open'}
                           collection={collection!}
                           participant={participant}
-                          client={client}
                           onBack={another}
                           onComplete={complete}
                         />

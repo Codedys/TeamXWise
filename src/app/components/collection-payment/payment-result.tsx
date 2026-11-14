@@ -4,28 +4,24 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { motion, MotionConfig } from 'motion/react';
 import { displayMoney } from '../create-collection/create-collection-draft';
-import type {
-  CollectionPreview,
-  CollectionPreviewClient,
-  PaymentReceiptPreview,
-} from '../collection-preview/collection-preview-client';
+import type { ChipInPreviewViewModel } from '@/adapters/presenters/chip-in-preview.view-model';
+import type { PaymentReceiptViewModel } from '@/adapters/presenters/payment-receipt.view-model';
+import { confirmBankTransferAction } from '@/app/actions';
 import { playChaChing } from './cha-ching-sound';
 import styles from './collection-payment.module.css';
 
 export function PaymentResult({
   collection,
   receipt,
-  client,
   onAnother,
   onConfirmed,
   canPayMore = true,
 }: {
   canPayMore?: boolean;
-  collection: CollectionPreview;
-  receipt: PaymentReceiptPreview;
-  client: CollectionPreviewClient;
+  collection: ChipInPreviewViewModel;
+  receipt: PaymentReceiptViewModel;
   onAnother: () => void;
-  onConfirmed: (receipt: PaymentReceiptPreview) => void;
+  onConfirmed: (receipt: PaymentReceiptViewModel) => void;
 }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -40,11 +36,14 @@ export function PaymentResult({
     setBusy(true);
     setError('');
     try {
-      onConfirmed(await client.confirmBankTransfer(collection.id, receipt.id));
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : 'The demo transfer could not be confirmed.',
-      );
+      const result = await confirmBankTransferAction(collection.id, receipt.id);
+      if (result.status === 'error') {
+        setError(result.message);
+        return;
+      }
+      onConfirmed(result.receipt);
+    } catch {
+      setError('The transfer could not be confirmed.');
     } finally {
       setBusy(false);
     }

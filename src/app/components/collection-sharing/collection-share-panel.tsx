@@ -3,66 +3,98 @@
 import Link from 'next/link';
 import QRCode from 'react-qr-code';
 import { useEffect, useRef, useState } from 'react';
-import { type CreateCollectionDraft } from '../create-collection/create-collection-draft';
-import { browserCollectionPreviewClient } from '../collection-preview/browser-collection-preview-client';
-import type {
-  CollectionPreview,
-  CollectionPreviewClient,
-} from '../collection-preview/collection-preview-client';
+import {
+  draftNames,
+  invitationPreview,
+  type CreateCollectionDraft,
+} from '../create-collection/create-collection-draft';
+import { browserCollectionDashboardClient } from '../collection-dashboard/browser-collection-dashboard-client';
+import { publishChipInAction, getChipInPreviewAction } from '@/app/actions';
+import type { ChipInPreviewViewModel } from '@/adapters/presenters/chip-in-preview.view-model';
 import { shareCollectionLink, shareCollectionQr } from './share-collection';
 import styles from './collection-share-panel.module.css';
 
+const POLL_INTERVAL_MS = 2500;
+/** The dashboard still runs on its own browser-local store (migrating next); DB data never expires. */
+const DASHBOARD_BRIDGE_LIFETIME_MS = 365 * 24 * 60 * 60 * 1000;
+
 export function CollectionSharePanel({
   draft,
-  client = browserCollectionPreviewClient,
   onPublished,
 }: {
   draft: CreateCollectionDraft;
-  client?: CollectionPreviewClient;
   onPublished?: (id: string) => void;
 }) {
-  const [collection, setCollection] = useState<CollectionPreview | null>(null);
+  const [collection, setCollection] = useState<ChipInPreviewViewModel | null>(null);
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  // A ref (not state) so the publish call survives React Strict Mode's dev-only
+  // mount→cleanup→remount: the promise is created once, but every effect run below
+  // attaches its own listener, so whichever run is still mounted when it resolves
+  // is the one that updates state.
+  const publishResult = useRef<ReturnType<typeof publishChipInAction> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let active = true;
-    client
-      .publish(draft)
+    publishResult.current ??= publishChipInAction({
+      title: draft.title,
+      description: draft.description,
+      audience: draft.audience,
+      amount: draft.amount,
+      currency: draft.currency,
+      deadline: draft.noDeadline ? null : draft.deadline,
+      limitType: draft.limitType,
+      spotLimit: draft.spotLimit,
+      goalAmount: draft.goalAmount,
+      collectEmail: draft.audience === 'anyone' && draft.collectEmail,
+      customQuestion:
+        draft.audience === 'anyone' && draft.customQuestionEnabled
+          ? draft.customQuestion.trim()
+          : null,
+      invitationMessage: invitationPreview(draft),
+      names: draft.audience === 'group' ? draftNames(draft.names) : [],
+    });
+    publishResult.current
       .then((result) => {
         if (!active) return;
-        setCollection(result);
-        onPublished?.(result.id);
+        if (result.status === 'error') {
+          setError(result.message);
+          return;
+        }
+        setCollection(result.chipIn);
+        browserCollectionDashboardClient.remember(
+          result.chipIn,
+          Date.now() + DASHBOARD_BRIDGE_LIFETIME_MS,
+        );
+        onPublished?.(result.chipIn.id);
         setUrl(
-          new URL(`/chip-in/pay/${encodeURIComponent(result.id)}`, window.location.origin)
+          new URL(`/chip-in/pay/${encodeURIComponent(result.chipIn.id)}`, window.location.origin)
             .href,
         );
       })
-      .catch((reason: unknown) => {
-        if (active)
-          setError(
-            reason instanceof Error ? reason.message : 'Could not prepare this preview.',
-          );
+      .catch(() => {
+        if (active) setError('Could not publish this collection right now.');
       });
     return () => {
       active = false;
     };
-  }, [client, draft, onPublished]);
+  }, [draft, onPublished]);
   useEffect(() => {
     if (!collection?.id) return;
     const id = collection.id;
-    return client.subscribe(() => {
-      void client.get(id).then((updated) => {
-        if (updated) setCollection(updated);
-        else
-          setError(
-            'This demo link is complete or has expired. Its payment data has been deleted. Your dashboard summary is kept.',
-          );
-      });
-    });
-  }, [client, collection?.id]);
+    const timer = setInterval(() => {
+      void getChipInPreviewAction(id)
+        .then((updated) => {
+          if (updated) setCollection(updated);
+        })
+        .catch(() => {
+          // A transient poll failure keeps showing the last good state.
+        });
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [collection?.id]);
   async function copy(text: string, label: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -78,18 +110,17 @@ export function CollectionSharePanel({
         {error}
       </p>
     );
-  if (!collection || !url) return <p role="status">Preparing your demo link…</p>;
+  if (!collection || !url) return <p role="status">Preparing your link…</p>;
   return (
-    <section className={styles.share} aria-label="Share your collection preview">
+    <section className={styles.share} aria-label="Share your collection">
       <p className={styles.summary}>
         <strong>{collection.title}</strong>
         <br />
-        Your link and QR open the same payer preview.
+        Your link and QR open the same payer page.
       </p>
       <div className={styles.layout}>
         <div className={styles.linkPanel}>
-          <span className={styles.badge}>FRONTEND DEMO</span>
-          <label htmlFor="collection-preview-link">Preview link</label>
+          <label htmlFor="collection-preview-link">Payment link</label>
           <input
             ref={inputRef}
             id="collection-preview-link"
@@ -98,11 +129,11 @@ export function CollectionSharePanel({
             onFocus={(event) => event.target.select()}
           />
           <div className={styles.buttons}>
-            <button type="button" onClick={() => void copy(url, 'Preview link')}>
+            <button type="button" onClick={() => void copy(url, 'Payment link')}>
               Copy link
             </button>
             <Link href={url} target="_blank" rel="noreferrer">
-              Open payer preview ↗
+              Open payer page ↗
             </Link>
           </div>
           <button
@@ -121,15 +152,9 @@ export function CollectionSharePanel({
             <strong>Your invitation</strong>
             <p>{collection.invitationMessage?.replaceAll('[link]', url)}</p>
           </div>
-          <p className={styles.notice}>
-            This link and its payment data are deleted after one hour, or when everyone has
-            paid / the limit is reached. Sharing across devices and real payments will be
-            available after the backend is connected.
-          </p>
           <p className={styles.progress}>
             {collection.progress.paidSpots}{' '}
-            {collection.progress.paidSpots === 1 ? 'person' : 'people'} chipped in · demo
-            payments only
+            {collection.progress.paidSpots === 1 ? 'person' : 'people'} chipped in
           </p>
         </div>
         <div className={styles.qrPanel}>
@@ -140,7 +165,7 @@ export function CollectionSharePanel({
               level="M"
               bgColor="#ffffff"
               fgColor="#163300"
-              title="QR code for this collection preview"
+              title="QR code for this collection"
             />
           </div>
           <button
@@ -152,10 +177,7 @@ export function CollectionSharePanel({
           >
             Share QR code
           </button>
-          <p>
-            The receiving device must be able to reach this address. Preview data stays in this
-            browser.
-          </p>
+          <p>The receiving device must be able to reach this address.</p>
         </div>
       </div>
       <p className={styles.status} role="status">

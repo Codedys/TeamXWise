@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { displayMoney, localDateInput } from '../create-collection/create-collection-draft';
 import { evaluateOpenCollection } from '../create-collection/open-collection-rules';
 import {
@@ -8,36 +8,32 @@ import {
   previewRuleDraft,
 } from '../collection-preview/browser-collection-preview-client';
 import type {
-  CollectionPreview,
-  CollectionPreviewClient,
-  ParticipantPreview,
-  PaymentReceiptPreview,
-  PreviewCurrency,
-  QuotePreview,
-} from '../collection-preview/collection-preview-client';
+  ChipInParticipantViewModel,
+  ChipInPreviewViewModel,
+} from '@/adapters/presenters/chip-in-preview.view-model';
+import type { PaymentReceiptViewModel } from '@/adapters/presenters/payment-receipt.view-model';
+import { submitPaymentAction } from '@/app/actions';
+import { demoQuote } from './demo-quote';
 import styles from './collection-payment.module.css';
 
 export function PaymentCheckout({
   collection,
   participant,
-  client,
   onBack,
   onComplete,
 }: {
-  collection: CollectionPreview;
-  participant?: ParticipantPreview;
-  client: CollectionPreviewClient;
+  collection: ChipInPreviewViewModel;
+  participant?: ChipInParticipantViewModel;
   onBack: () => void;
-  onComplete: (receipt: PaymentReceiptPreview) => void;
+  onComplete: (receipt: PaymentReceiptViewModel) => void;
 }) {
   const [detailsComplete, setDetailsComplete] = useState(!!participant);
-  const [currency, setCurrency] = useState<PreviewCurrency>(collection.currency);
+  const [currency, setCurrency] = useState(collection.currency);
   const [quantity, setQuantity] = useState('1');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [answer, setAnswer] = useState('');
   const [method, setMethod] = useState<'instant' | 'bank'>('instant');
-  const [quote, setQuote] = useState<QuotePreview | null>(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const requestId = useRef<string | null>(null);
@@ -52,34 +48,9 @@ export function PaymentCheckout({
           count,
         )
       : null;
-  const quoteReady =
-    quote &&
-    quote.payCurrency === currency &&
-    quote.sourceMinorUnits === collection.priceMinorUnits * count;
+  const quote = demoQuote(collection.priceMinorUnits, collection.currency, currency, count);
   const unavailable =
     !!closed || (participant ? participant.status !== 'unpaid' : !capacity?.canContribute);
-  useEffect(() => {
-    let active = true;
-    client
-      .quote(collection.id, currency, count)
-      .then((result) => {
-        if (active) {
-          setQuote(result);
-          setError('');
-        }
-      })
-      .catch((reason: unknown) => {
-        if (active) {
-          setQuote(null);
-          setError(
-            reason instanceof Error ? reason.message : 'Could not prepare the demo quote.',
-          );
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [client, collection.id, collection.priceMinorUnits, currency, count]);
   function changed() {
     requestId.current = null;
     setError('');
@@ -107,16 +78,16 @@ export function PaymentCheckout({
       setError('');
       return;
     }
-    if (!quoteReady || submitting || unavailable) return;
+    if (!quote || submitting || unavailable) return;
     setSubmitting(true);
     setError('');
     requestId.current ??= crypto.randomUUID();
     try {
-      const receipt = await client.submit({
-        collectionId: collection.id,
+      const result = await submitPaymentAction({
+        chipInId: collection.id,
         requestId: requestId.current,
         expectedSourceMinorUnits: quote.sourceMinorUnits,
-        participantId: participant?.id,
+        participantId: participant?.id ?? null,
         payerName: participant?.name ?? name,
         quantity: count,
         email,
@@ -124,11 +95,13 @@ export function PaymentCheckout({
         currency,
         method,
       });
-      onComplete(receipt);
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : 'The demo payment could not be completed.',
-      );
+      if (result.status === 'error') {
+        setError(result.message);
+        return;
+      }
+      onComplete(result.receipt);
+    } catch {
+      setError('The payment could not be completed.');
     } finally {
       setSubmitting(false);
     }
@@ -200,7 +173,6 @@ export function PaymentCheckout({
                   value={quantity}
                   onChange={(event) => {
                     setQuantity(event.target.value);
-                    setQuote(null);
                     changed();
                   }}
                 />
@@ -262,7 +234,7 @@ export function PaymentCheckout({
                   <span>{collection.ownerName} gets</span>
                   <strong>
                     {displayMoney(
-                      quoteReady ? quote.sourceMinorUnits : collection.priceMinorUnits,
+                      quote ? quote.sourceMinorUnits : collection.priceMinorUnits,
                       collection.currency,
                     )}
                   </strong>
@@ -273,8 +245,7 @@ export function PaymentCheckout({
                     id="payer-currency"
                     value={currency}
                     onChange={(event) => {
-                      setCurrency(event.target.value as PreviewCurrency);
-                      setQuote(null);
+                      setCurrency(event.target.value as 'EUR' | 'GBP' | 'USD');
                       changed();
                     }}
                   >
@@ -282,21 +253,18 @@ export function PaymentCheckout({
                     <option>GBP</option>
                     <option>USD</option>
                   </select>
-                  <strong>
-                    {quoteReady ? displayMoney(quote.payMinorUnits, currency) : '…'}
-                  </strong>
+                  <strong>{quote ? displayMoney(quote.payMinorUnits, currency) : '…'}</strong>
                 </div>
                 <p>
-                  {quoteReady
+                  {quote
                     ? `Demo rate: 1 ${collection.currency} = ${quote.rate.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} ${currency}.`
-                    : 'Preparing demo quote…'}{' '}
+                    : 'Preparing quote…'}{' '}
                   Rates and fees are illustrative.
                 </p>
               </div>
             </div>
             <p className={styles.infoStrip}>
-              This payment is for {collection.title}. No app or account is needed in the
-              planned payer flow.
+              This payment is for {collection.title}. No app or account is needed.
             </p>
             <div className={styles.methodChoices} aria-label="Demo payment method">
               <button
@@ -361,7 +329,7 @@ export function PaymentCheckout({
           <button
             className={styles.primary}
             type="submit"
-            disabled={(detailsComplete && !quoteReady) || unavailable || submitting}
+            disabled={(detailsComplete && !quote) || unavailable || submitting}
           >
             {!detailsComplete
               ? 'Continue'
@@ -369,7 +337,7 @@ export function PaymentCheckout({
                 ? 'Processing demo…'
                 : method === 'bank'
                   ? 'Preview bank transfer'
-                  : `Demo pay ${quoteReady ? displayMoney(quote.payMinorUnits, currency) : ''}`}
+                  : `Demo pay ${quote ? displayMoney(quote.payMinorUnits, currency) : ''}`}
           </button>
         </div>
       </fieldset>
