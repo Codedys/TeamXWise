@@ -75,7 +75,9 @@
 }
 .header {
   justify-content: space-between;
-  align-items: start;
+  align-items: center;
+  gap: 20px;
+  padding: 6px 0 2px;
 }
 .header h1 {
   font-size: clamp(27px, 2.8vw, 42px);
@@ -83,6 +85,7 @@
   line-height: 1.1;
   letter-spacing: -1.5px;
   overflow-wrap: anywhere;
+  font-family: var(--font-display, "Inter Tight", sans-serif);
 }
 .header p {
   color: #52574e;
@@ -91,6 +94,7 @@
 }
 .actions {
   flex-wrap: wrap;
+  flex-shrink: 0;
   justify-content: flex-end;
 }
 .actions button {
@@ -120,9 +124,10 @@
 }
 .columns {
   display: grid;
-  grid-template-columns: minmax(225px, 1fr) minmax(320px, 1.65fr) minmax(225px, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.7fr) minmax(200px, 0.9fr);
+  gap: 20px;
   align-items: start;
+  margin-top: 20px;
 }
 .stack {
   display: grid;
@@ -291,6 +296,7 @@
   padding: 12px 18px;
   font-size: 13px;
   color: #163300;
+  transition: box-shadow 0.15s ease;
 }
 .people {
   display: grid;
@@ -359,7 +365,7 @@
   gap: 10px;
   padding: 12px;
   border-radius: 18px;
-  background: #f0f2ed;
+  background: rgba(255, 192, 145, 0.18);
   margin: -4px -4px 18px;
 }
 .missing > div {
@@ -474,6 +480,30 @@
   font-size: 15px;
 }
 
+.exceptionCard {
+  border-left: 4px solid #ffc091;
+  background: #fffcf8;
+}
+.secondaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 24px;
+}
+.textAction {
+  background: transparent;
+  color: #555b50;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  min-height: 36px;
+  padding: 6px 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.textAction:hover {
+  background: transparent;
+  color: var(--forest);
+}
 .notice {
   font-size: 13px;
   margin-top: 22px;

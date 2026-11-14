@@ -305,7 +305,7 @@ export function CollectionDashboard({
             <section className={styles.card}>
               <p>Collected for this trip</p>
               <h2 className={styles.collected}>{money(model.total)}</h2>
-              <p>Keep the group's payments organised in one place.</p>
+              <p>Keep the group&apos;s payments organised in one place.</p>
               <button
                 className={styles.dark}
                 onClick={() => noticeAction('Trip bill payment preview.')}
@@ -373,7 +373,7 @@ export function CollectionDashboard({
                   <b>{model.group ? 'Märt Hein' : 'Helen Lepp'}</b>
                   <b>+ {money(collection.priceMinorUnits)}</b>
                 </div>
-                <p>13 Nov, "{model.group ? 'Rome for Laura Kuusk' : 'party xx'}"</p>
+                <p>13 Nov, &quot;{model.group ? 'Rome for Laura Kuusk' : 'party xx'}&quot;</p>
               </div>
               {model.group && (
                 <div className={styles.suggestedMatch}>
@@ -386,7 +386,7 @@ export function CollectionDashboard({
               )}
               <div className={styles.smallActions}>
                 <button className={styles.dark} onClick={saveException}>
-                  {model.group ? 'It's Laura' : 'Yes, add Helen'}
+                  {model.group ? "It's Laura" : 'Yes, add Helen'}
                 </button>
                 <button onClick={saveException}>Not related</button>
               </div>
@@ -400,13 +400,13 @@ export function CollectionDashboard({
                 <span className={styles.warning}>!</span>
                 <div>
                   <h3>Still missing</h3>
-                  <p>{model.missing} people haven't paid</p>
+                  <p>{model.missing} people haven&apos;t paid</p>
                 </div>
                 <strong>{money(model.outstanding)}</strong>
               </div>
             )}
             <div className={styles.listHeader}>
-              <h3>{model.group ? 'Who still owes' : 'Who's coming'}</h3>
+              <h3>{model.group ? 'Who still owes' : "Who's coming"}</h3>
               <label>
                 <span className={styles.srOnly}>Find a name</span>
                 <input
