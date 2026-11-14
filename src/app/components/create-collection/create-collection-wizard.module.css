@@ -1649,3 +1649,391 @@
   color: var(--forest);
   pointer-events: none;
 }
+
+.mobileHeader {
+  display: none;
+}
+@media (max-width: 700px) {
+  .screen {
+    padding: 0;
+    background: #fff;
+  }
+  .wizard {
+    display: flex;
+    flex-direction: column;
+    border-radius: 0;
+  }
+  .sidebar {
+    display: none;
+  }
+  .form {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    padding: max(28px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
+  }
+  .mobileHeader {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .mobileBack {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #f0f2ed;
+    color: var(--forest);
+    cursor: pointer;
+  }
+  .mobileSegments {
+    display: flex;
+    flex: 1;
+    gap: 5px;
+    min-width: 0;
+  }
+  .mobileSegments span {
+    flex: 1;
+    height: 5px;
+    border-radius: 99px;
+    background: #e8ebe6;
+  }
+  .mobileSegments span[data-complete='true'] {
+    background: var(--forest);
+  }
+  .mobileCount {
+    flex-shrink: 0;
+    color: var(--secondary);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .mobileCancel {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #56604e;
+    font-size: 23px !important;
+    cursor: pointer;
+  }
+  .stepHeader {
+    display: none;
+  }
+  .formContent {
+    scrollbar-gutter: auto;
+  }
+  .heading,
+  .shareForm .heading {
+    margin-bottom: 22px;
+    font-family: var(--font-display, 'Inter Tight', sans-serif);
+    font-size: 36px;
+    font-weight: 950;
+    letter-spacing: -1.5px;
+    line-height: 1.06;
+  }
+  .actions {
+    padding-top: 18px;
+  }
+  .actions .backButton {
+    display: none;
+  }
+  .continueButton {
+    width: 100%;
+    min-height: 54px;
+    font-size: 16px !important;
+  }
+  .label {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .titleInput {
+    min-height: 62px;
+    font-size: 20px !important;
+    border-radius: 16px;
+  }
+  .textarea {
+    min-height: 96px;
+    padding: 14px 16px;
+    font-size: 16px !important;
+    line-height: 1.4;
+  }
+  .suggestions {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .suggestion {
+    padding: 11px 17px;
+    min-height: 46px;
+    font-size: 13px !important;
+  }
+  .description {
+    margin-bottom: 22px;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .audienceOptions,
+  .limitOptions {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .audienceOption {
+    padding: 22px 20px;
+    border-radius: 26px;
+  }
+  .audienceOption .audienceRadio {
+    display: none;
+  }
+  .audienceOptionHeader {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .audienceOptionHeader strong {
+    flex: 1 1 auto;
+    font-size: 20px;
+    letter-spacing: -0.4px;
+  }
+  .audienceOptionDescription {
+    margin-top: 8px;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .suggestedBadge {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+  .audienceHelp {
+    margin-top: 18px;
+    font-size: 14px;
+  }
+  .currencyChoice {
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+  .amountPanel {
+    min-height: 110px;
+    padding: 18px 14px;
+    gap: 8px;
+    border-radius: 26px;
+  }
+  .amountAdjust {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    font-size: 25px !important;
+  }
+  .amountValue {
+    max-width: calc(100% - 96px);
+    font-size: clamp(30px, 11vw, 54px);
+    letter-spacing: -2px;
+  }
+  .amountValue input {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .amountPresets {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 16px;
+  }
+  .amountPresets button {
+    min-height: 44px;
+    padding: 10px 6px;
+    font-size: 13px !important;
+  }
+  .summaryStrip,
+  .limitSummary {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .deadlineLayout,
+  .reviewLayout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .calendar {
+    padding: 18px 14px;
+    border-radius: 28px;
+  }
+  .calendarHeader {
+    margin-bottom: 14px;
+  }
+  .calendarHeader h2 {
+    font-size: 16px;
+  }
+  .calendarHeader button {
+    width: 40px;
+    height: 40px;
+  }
+  .calendarGrid {
+    gap: 3px;
+  }
+  .calendarDay {
+    height: 39px;
+    min-height: 39px;
+    font-size: 14px !important;
+  }
+  .deadlineCard {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: #e2f6d5;
+    color: var(--forest);
+  }
+  .deadlineCard strong {
+    font-size: 25px;
+    color: var(--forest);
+  }
+  .deadlineCard > span {
+    color: var(--forest);
+    font-size: 13px;
+  }
+  .calendarHelp {
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  .pasteArea {
+    min-height: 300px;
+    padding: 18px;
+    border-radius: 16px;
+    font-size: 16px;
+  }
+  .participantGrid {
+    grid-template-columns: 1fr;
+    gap: 9px;
+    max-height: 46dvh;
+    overflow-y: auto;
+  }
+  .participantItem {
+    gap: 8px;
+  }
+  .participantItem input {
+    min-height: 48px;
+    font-size: 15px;
+    padding: 11px 14px;
+    border-radius: 15px;
+  }
+  .participantItem button {
+    width: 40px;
+    height: 40px;
+  }
+  .rosterHeader {
+    align-items: start;
+    gap: 14px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .addParticipant {
+    margin-top: 14px;
+  }
+  .addParticipant input {
+    min-height: 46px;
+    min-width: 0;
+  }
+  .nameCount {
+    font-size: 12px;
+  }
+  .limitOption {
+    border-radius: 25px;
+    padding: 0;
+  }
+  .limitChoice {
+    padding: 20px;
+  }
+  .limitOptionHeader strong {
+    font-size: 19px;
+  }
+  .limitChoice > span:last-child {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .limitOptionHeader .audienceRadio {
+    width: 28px;
+    height: 28px;
+  }
+  .limitOptionHeader .audienceRadio svg {
+    width: 20px;
+    height: 20px;
+  }
+  .limitAdjust {
+    margin: 0 18px 18px;
+  }
+  .goalInput {
+    margin: 0 18px 18px;
+  }
+  .questionRow {
+    padding: 18px;
+    border-radius: 22px;
+  }
+  .questionRow strong {
+    font-size: 16px;
+  }
+  .questionRow p {
+    font-size: 13px;
+  }
+  .questionInput {
+    min-height: 48px;
+    font-size: 16px !important;
+  }
+  .reviewCard {
+    padding: 24px;
+    border-radius: 28px;
+    max-width: none;
+    min-height: 0;
+  }
+  .reviewCard h2 {
+    font-size: 26px;
+    letter-spacing: -0.6px;
+  }
+  .reviewTotal {
+    font-size: clamp(34px, 11vw, 54px);
+    letter-spacing: -2px;
+    margin-top: 30px;
+  }
+  .reviewCalculation {
+    font-size: 15px;
+  }
+  .reviewCardFooter {
+    margin-top: 32px;
+    padding-top: 24px;
+  }
+  .reviewDeadline strong,
+  .reviewOpenUntil strong {
+    font-size: 18px;
+  }
+  .messageEditor {
+    min-height: 138px;
+    padding: 16px;
+    font-size: 15px;
+    border-radius: 18px;
+  }
+}
+@media (max-width: 360px) {
+  .form {
+    padding-inline: 20px;
+  }
+  .heading,
+  .shareForm .heading {
+    font-size: 32px;
+  }
+  .mobileHeader {
+    gap: 7px;
+  }
+}
+
+@media (max-width: 700px) {
+  .deadlineCard p {
+    color: #163300;
+  }
+}

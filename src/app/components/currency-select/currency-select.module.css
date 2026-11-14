@@ -1,0 +1,52 @@
+.control {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 96px;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid #d6dfcf;
+  border-radius: 999px;
+  background: #fff;
+  color: #163300;
+  box-shadow: 0 1px 2px #16330006;
+  vertical-align: middle;
+}
+.code {
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 20px;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+}
+.chevron {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.control select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 16px;
+}
+.control:focus-within {
+  outline: 3px solid #73965b;
+  outline-offset: 3px;
+}
+.control:hover {
+  border-color: #93ac81;
+}
+.control[data-disabled='true'] {
+  opacity: 0.5;
+}
+.control[data-disabled='true'] select {
+  cursor: default;
+}

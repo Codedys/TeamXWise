@@ -2,70 +2,81 @@
   position: relative;
   width: 100%;
   max-width: 722px;
-  height: 372px;
   overflow: hidden;
-  border-radius: 36px;
-  background: #f0f2ed;
-  color: #163300;
+  border-radius: 32px;
+  background: #f0f3ed;
+  color: #102b00;
+  isolation: isolate;
 }
 .valueArea {
-  position: absolute;
-  top: 10px;
-  left: 50%;
+  position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transform: translateX(-50%);
+  padding: 22px 16px 0;
+  pointer-events: none;
 }
 .value {
-  width: 4.6ch;
+  width: 3.8ch;
   max-width: 100%;
-  height: 130px;
+  height: 114px;
   padding: 0;
   border: 0;
   border-radius: 12px;
   outline-offset: -4px !important;
   background: transparent;
-  color: #163300;
-  font-size: 120px !important;
-  font-weight: 900 !important;
+  color: #102b00;
+  font-family: var(--font-display, 'Inter Tight', sans-serif) !important;
+  font-size: 110px !important;
+  font-weight: 950 !important;
   line-height: 1;
-  letter-spacing: -8px;
+  letter-spacing: -6px;
   text-align: center;
   appearance: textfield;
+  pointer-events: auto;
 }
 .value::-webkit-inner-spin-button,
 .value::-webkit-outer-spin-button {
   appearance: none;
 }
 .value::placeholder {
-  color: #163300;
+  color: #102b00;
 }
 .unit {
   color: #454745;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 650;
-  line-height: 26px;
+  line-height: 24px;
 }
 .wheel {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1;
   cursor: grab;
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .wheel:active {
   cursor: grabbing;
 }
 .wheel:focus-visible {
   outline-offset: -5px !important;
-  border-radius: inherit;
+  border-radius: 20px;
 }
 .wheel svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+.ticks {
+  transition: transform 170ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+.panel[data-dragging='true'] .ticks {
+  transition: none;
 }
 .adjust {
   position: absolute;
@@ -73,19 +84,20 @@
   z-index: 3;
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   padding: 0;
-  border: 0;
+  border: 1px solid #1633000c;
   border-radius: 50%;
   background: #fff;
-  color: #163300;
-  font-size: 32px !important;
+  color: #102b00;
+  box-shadow: 0 3px 10px #102b0008;
+  font-size: 30px !important;
   font-weight: 650 !important;
   cursor: pointer;
 }
 .adjust:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: default;
 }
 .minus {
@@ -96,19 +108,19 @@
 }
 @media (max-width: 700px) {
   .panel {
-    height: 320px;
     border-radius: 28px;
   }
-  .value {
-    height: 112px;
-    font-size: 100px !important;
-    letter-spacing: -6px;
-  }
   .valueArea {
-    top: 8px;
+    padding-top: 20px;
+  }
+  .value {
+    height: 94px;
+    font-size: 92px !important;
+    letter-spacing: -5px;
   }
   .unit {
-    font-size: 16px;
+    font-size: 15px;
+    line-height: 22px;
   }
   .adjust {
     width: 48px;
@@ -120,5 +132,10 @@
   }
   .plus {
     right: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticks {
+    transition: none;
   }
 }
