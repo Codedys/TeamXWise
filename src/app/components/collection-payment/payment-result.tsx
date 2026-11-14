@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, MotionConfig } from 'motion/react';
 import { displayMoney } from '../create-collection/create-collection-draft';
 import type {
@@ -9,6 +9,7 @@ import type {
   CollectionPreviewClient,
   PaymentReceiptPreview,
 } from '../collection-preview/collection-preview-client';
+import { playChaChing } from './cha-ching-sound';
 import styles from './collection-payment.module.css';
 
 export function PaymentResult({
@@ -29,6 +30,12 @@ export function PaymentResult({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const pending = receipt.status === 'pending';
+  const chimedReceiptId = useRef<string | null>(null);
+  useEffect(() => {
+    if (pending || chimedReceiptId.current === receipt.id) return;
+    chimedReceiptId.current = receipt.id;
+    playChaChing();
+  }, [pending, receipt.id]);
   async function confirm() {
     setBusy(true);
     setError('');
